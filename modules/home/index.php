@@ -26,6 +26,7 @@ body { margin: 0; min-height: 100vh; overflow-x: hidden; color: #f5f7ff; backgro
 .scene::before { top: 6rem; left: -13rem; background: #4868ff; }
 .scene::after { top: 20rem; right: -14rem; background: #09d4b4; }
 .grid-glow { position:absolute; inset:0; z-index:-1; opacity:.17; background-image:linear-gradient(rgba(142,166,208,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(142,166,208,.08) 1px,transparent 1px); background-size:64px 64px; mask-image:linear-gradient(to bottom,black,transparent 82%); }
+.neural-network { position:absolute; inset:0; z-index:0; width:100%; height:100%; pointer-events:none; opacity:.52; }
 .topbar { border-bottom: 1px solid rgba(255,255,255,.08); background: rgba(8,13,27,.65); backdrop-filter: blur(18px); }
 .brand-mark { display:grid; place-items:center; width:2rem; height:2rem; border-radius:.7rem; color:#07131e; background:linear-gradient(145deg,#83ffe4,#49c8fc); box-shadow:0 0 25px rgba(73,200,252,.3); }
 .eyebrow { display:inline-flex; align-items:center; gap:.55rem; padding:.45rem .75rem; border:1px solid rgba(105,230,216,.2); border-radius:999px; color:#9cefe1; background:rgba(26,107,104,.12); font-size:.75rem; font-weight:650; letter-spacing:.08em; text-transform:uppercase; }
@@ -36,7 +37,7 @@ body { margin: 0; min-height: 100vh; overflow-x: hidden; color: #f5f7ff; backgro
 .primary-cta:hover { transform:translateY(-2px); box-shadow:0 15px 42px rgba(67,207,206,.32),inset 0 1px rgba(255,255,255,.55); }
 .secondary-cta { border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.035); }
 .secondary-cta:hover { border-color:rgba(143,231,224,.5); background:rgba(255,255,255,.08); }
-.visual-stage { position:relative; min-height:31rem; perspective:1200px; }
+.visual-stage { position:relative; z-index:1; min-height:31rem; perspective:1200px; }
 .orb { position:absolute; width:19rem; height:19rem; top:5.4rem; left:50%; transform:translateX(-50%); border-radius:50%; background:radial-gradient(circle at 35% 28%,rgba(110,232,232,.4),rgba(66,107,220,.17) 34%,rgba(26,41,89,.07) 63%,transparent 70%); filter:blur(2px); animation:orb-pulse 7s ease-in-out infinite; }
 .orbit { position:absolute; top:7.2rem; left:50%; width:26rem; height:14rem; border:1px solid rgba(127,225,229,.17); border-radius:50%; transform:translateX(-50%) rotate(-22deg); box-shadow:0 0 35px rgba(63,190,226,.06),inset 0 0 35px rgba(63,190,226,.04); }
 .orbit::after { content:""; position:absolute; width:.55rem; height:.55rem; top:1.2rem; right:3.7rem; border-radius:50%; background:#8df5dc; box-shadow:0 0 18px 5px rgba(91,235,216,.6); }
@@ -79,7 +80,8 @@ body { margin: 0; min-height: 100vh; overflow-x: hidden; color: #f5f7ff; backgro
 </header>
 
 <main>
-  <section class="mx-auto grid max-w-7xl items-center gap-4 px-5 pb-12 pt-12 sm:px-8 md:min-h-[650px] md:grid-cols-[1.02fr_.98fr] md:gap-0 md:pt-8">
+  <section class="relative mx-auto grid max-w-7xl items-center gap-4 px-5 pb-12 pt-12 sm:px-8 md:min-h-[650px] md:grid-cols-[1.02fr_.98fr] md:gap-0 md:pt-8">
+    <canvas class="neural-network" data-neural-network aria-hidden="true"></canvas>
     <div class="relative z-10 max-w-2xl py-6 text-center md:text-left">
       <div class="eyebrow rise-in"><span class="eyebrow-dot"></span> Your next opportunity starts here</div>
       <h1 class="headline rise-in delay-1 mt-6 text-5xl font-bold sm:text-6xl lg:text-[4.65rem]">Your experience,<br><span class="headline-accent">in its best light.</span></h1>
@@ -124,5 +126,6 @@ body { margin: 0; min-height: 100vh; overflow-x: hidden; color: #f5f7ff; backgro
   </div>
 </footer>
 </div>
+<script src="<?php echo BASE_URL; ?>assets/js/neural-network.js" defer></script>
 </body>
 </html>

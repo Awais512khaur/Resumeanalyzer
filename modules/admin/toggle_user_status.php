@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../../config/session.php';
 
 require_once __DIR__ . "/../../config/config.php";
 require_once __DIR__ . "/../../config/db.php";
@@ -37,8 +37,14 @@ if (!$target || $target['role'] !== 'user') {
 }
 
 $newStatus = (int)$target['status'] === 1 ? 0 : 1;
-$update = $pdo->prepare("UPDATE users SET status = ? WHERE id = ? AND role = 'user'");
-$update->execute([$newStatus, $userId]);
+$adminName = (string)($_SESSION['user_name'] ?? 'Administrator');
+if ($newStatus === 1) {
+    $pdo->prepare("UPDATE users SET status = 1, lock_reason = NULL, locked_by_name = NULL, failed_login_count = 0, failed_login_until = NULL WHERE id = ? AND role = 'user'")
+        ->execute([$userId]);
+} else {
+    $pdo->prepare("UPDATE users SET status = 0, lock_reason = 'admin', locked_by_name = ?, failed_login_until = NULL WHERE id = ? AND role = 'user'")
+        ->execute([$adminName, $userId]);
+}
 
 $action = $newStatus === 1 ? 'user.unlocked' : 'user.locked';
 $state = $newStatus === 1 ? 'unlocked' : 'locked';

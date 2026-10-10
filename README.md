@@ -139,14 +139,23 @@ Resume Analyzer is a PHP and MySQL web application that extracts text from PDF r
   database/migrations/20261010_create_password_reset_otps.sql
   ```
 
+- Import the authentication rate-limit migration for sign-in and password-reset throttling:
+
+  ```text
+  database/migrations/20261010_add_auth_rate_limits.sql
+  ```
+
+- Import `database/migrations/20261010_add_failed_login_locks.sql` to enable the account lock policy: five incorrect passwords pause sign-in for that email for five minutes; ten incorrect passwords lock the account until an administrator unlocks it. The admin user list shows whether an account was locked by failed attempts or by an administrator, including the administrator's name.
+
 - To run the migration in phpMyAdmin, select `resume_analyzer`, open the **Import** tab, choose the migration file, then click **Import** or **Go**.
 - If you are setting up an existing database that already has the tables, keep your data and run only the migration if the `positions.required_skills` column is missing. Do not import the base schema over an existing database unless you intend to replace its data.
-- Open `config/db.php` and update the host, database name, username, and password if your MySQL settings differ from the XAMPP defaults (`localhost`, `resume_analyzer`, `root`, and an empty password).
+- The default local database settings are `localhost`, `resume_analyzer`, `root`, and an empty password. For other environments, set `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD` as environment variables.
+- Production deployments must set an HTTPS `APP_URL` and use a non-root database account with a strong password. Existing databases must also apply the authentication rate-limit migration above.
 
 ## 8. Configure the Gemini API key
 
-- Open `config/config.php` and set `GEMINI_API_KEY` to your own Google Gemini API key.
-- Do not publish or commit a real API key. Keep it private and replace any example or previously exposed key with your own.
+- Set the `GEMINI_API_KEY` environment variable to your own Google Gemini API key. On Windows, use `setx GEMINI_API_KEY "your-new-key"`, then restart Apache.
+- Do not publish or commit a real API key. Keep it private and revoke any key that was previously present in source control.
 - AI-generated suggestions require internet access from PHP and the PHP `curl` extension. Configure the key before relying on AI analysis.
 
 ## 9. Configure password reset email
@@ -167,7 +176,7 @@ Resume Analyzer is a PHP and MySQL web application that extracts text from PDF r
 - Use the SMTP host, port, and encryption required by your email provider. For authenticated accounts, use an app password or SMTP credential when the provider requires it; do not use your normal account password unless the provider explicitly supports it.
 - The `setx` commands save these values for your Windows user. Close and reopen the XAMPP Control Panel, then restart Apache so PHP can read them. If Apache runs as a Windows service, add the values as System environment variables instead.
 - Keep SMTP credentials private. Do not commit them to the repository or paste them into `config/mail.php`; that file reads the environment variables.
-- The reset flow checks whether the email exists, emails a six-digit code that expires after 10 minutes, limits code entry to five attempts, and allows a resend once per minute. The user then sets and confirms a new password.
+- The reset flow sends a six-digit code to registered emails. Codes expire after 10 minutes, code entry is limited to five attempts, and resends are limited to once per minute. Responses do not disclose whether an email is registered. New passwords require at least 12 characters.
 
 ## 10. Check folder permissions
 
@@ -227,3 +236,98 @@ Resume Analyzer is a PHP and MySQL web application that extracts text from PDF r
 - TCPDF is present at `tools\tcpdf\tcpdf.php`.
 - Tesseract OCR is installed at `C:\Program Files\Tesseract-OCR\tesseract.exe` on the current development computer.
 - These local tools and uploads are ignored by Git, so their presence here does not guarantee they will be included in a fresh clone.
+
+## 13. Deploy online for free (Oracle Cloud Always Free)
+
+The app needs PHP, MySQL, Poppler, and Tesseract. Free PHP shared hosts often block command execution, and hosts with temporary databases or file storage can lose uploaded resumes. This deployment runs the PHP app, MySQL, and PDF tools together on an Oracle Cloud Always Free Linux VM; Caddy obtains and renews HTTPS certificates for a domain you control.
+
+### Important before publishing
+
+- The deployment starts with an empty database. It creates the current tables but does not copy local user accounts, resume files, analysis history, or other private records.
+- The local `SQL_file/resume_analyzer.sql` contains sample user records and resume metadata. It is intentionally not used by this deployment.
+- A Gemini API key was previously present in local configuration. It is no longer read from source; set a newly generated key in the server `.env` and revoke the old key in Google AI Studio/Google Cloud before making this project public.
+- Password reset email only works after valid SMTP settings are entered in `.env`.
+- Oracle requires payment-method verification to create a Free Tier account. Oracle describes Always Free resources as free for the life of the account, but only resources marked Always Free remain free; do not upgrade the account or select paid resources.
+- A domain name is required for automatic HTTPS. Point its DNS A record at the VM's public IPv4 address before starting the app.
+
+### Create the free server
+
+- Create an [Oracle Cloud Free Tier account](https://www.oracle.com/cloud/free/), complete verification, and select your home region carefully.
+- In the Oracle Cloud Console, create an **Always Free eligible** Ubuntu 24.04 VM. An Ampere A1 instance is suitable if available in your region; keep the total within the Always Free limits.
+- Assign a public IPv4 address and add ingress rules for TCP ports `80` and `443`. Restrict SSH on port `22` to your own IP address.
+- Point your domain's DNS A record to that public IP and wait until it resolves.
+- Connect to the VM using SSH, then install Docker and Git:
+
+  ```bash
+  sudo apt update
+  sudo apt install -y docker.io docker-compose-v2 git
+  sudo systemctl enable --now docker
+  sudo ufw allow 80/tcp
+  sudo ufw allow 443/tcp
+  ```
+
+### Put the project on the server
+
+- Push the reviewed project files to a Git repository that you control. Keep it private until the exposed Gemini key has been revoked and the project has been reviewed for any other secrets.
+- On the VM, clone that repository and enter its project folder:
+
+  ```bash
+  git clone YOUR_PRIVATE_OR_PUBLIC_REPOSITORY_URL Resumeanalyzer
+  cd Resumeanalyzer
+  ```
+
+- Create the server-only environment file and edit it. Do not commit or share `.env`:
+
+  ```bash
+  cp .env.example .env
+  nano .env
+  ```
+
+- Generate two different database passwords with `openssl rand -hex 32`, set `APP_DOMAIN` to the domain name, and add the newly generated `GEMINI_API_KEY`.
+- Restrict the environment file to the VM owner:
+
+  ```bash
+  chmod 600 .env
+  ```
+- To enable password reset, fill in the `RESUME_SMTP_*` values and sender email. Leave those empty only if password reset is not needed yet.
+- Keep the MySQL port private; the Compose setup does not publish it to the internet.
+
+### Start the application
+
+- Build and start the app, HTTPS proxy, and database:
+
+  ```bash
+  sudo docker compose up -d --build
+  ```
+
+- The first database startup creates an empty schema from `database/schema.sql`. Docker volumes retain the MySQL database, uploaded PDFs, generated reports, and HTTPS certificates through app rebuilds and VM restarts.
+- Open `https://YOUR_DOMAIN` and register the first account.
+- Promote that account to administrator from the VM. Open the MySQL prompt, then run the SQL statement with the email used during registration:
+
+  ```bash
+  sudo docker compose exec db mysql -u root -p
+  ```
+
+  ```sql
+  UPDATE users SET role = 'admin' WHERE email = 'admin@example.com';
+  ```
+
+- Sign out and back in so the administrator role is refreshed in the session.
+- Check service output when troubleshooting:
+
+  ```bash
+  sudo docker compose logs --tail=100 app db caddy
+  ```
+
+### Back up and update
+
+- Keep regular backups outside the VM. This deployment uses persistent Docker volumes, but the free server itself is not a backup service.
+- Back up the database to a protected file:
+
+  ```bash
+  sudo docker compose exec -T db sh -lc 'mysqldump -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' > resume_analyzer_backup.sql
+  ```
+
+- Back up `uploads/` data from the `resume_uploads` Docker volume as well if you need to retain uploaded CVs.
+- To update after reviewed code has been pushed, run `git pull` and `sudo docker compose up -d --build` in the project folder.
+- Never upload private resume files to a public Git repository or send database backups through public issue trackers.

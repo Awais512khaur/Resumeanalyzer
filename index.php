@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/config/session.php';
 require_once __DIR__ . "/config/config.php";
 require_once __DIR__ . "/config/db.php";
 // If no page → show landing page
@@ -35,6 +35,9 @@ switch ($page) {
         break;
     case 'developer':
         require __DIR__ . "/modules/developer/index.php";
+        break;
+    case 'profile':
+        require __DIR__ . "/modules/profile/index.php";
         break;
     case 'dashboard':
         require __DIR__ . "/modules/dashboard/index.php";

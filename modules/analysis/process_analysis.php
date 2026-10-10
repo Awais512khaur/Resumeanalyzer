@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../../config/session.php';
 
 require_once __DIR__ . "/../../config/config.php";
 require_once __DIR__ . "/../../config/db.php";
@@ -12,10 +12,26 @@ if (!isset($_POST['resume_id'])) {
     header("Location: " . BASE_URL . "analyze");
     exit;
 }
+if (empty($_SESSION['user_id'])) {
+    header('Location: ' . BASE_URL . 'login');
+    exit;
+}
+if (!resume_csrf_is_valid($_POST['csrf_token'] ?? null)) {
+    http_response_code(403);
+    exit('Your session expired. Refresh the page and try again.');
+}
 
 // INPUT
-$resume_id = $_POST['resume_id'];
+$resume_id = filter_var($_POST['resume_id'], FILTER_VALIDATE_INT);
+if (!$resume_id || $resume_id < 1) {
+    http_response_code(400);
+    exit('Invalid resume.');
+}
 $original_job_description = trim($_POST['job_description'] ?? '');
+if (strlen($original_job_description) > 30000) {
+    http_response_code(413);
+    exit('The job description is too long. Keep it under 30,000 characters.');
+}
 
 // GET RESUME
 $stmt = $pdo->prepare("SELECT * FROM resumes WHERE id = ?");
@@ -58,33 +74,41 @@ $stmt = $pdo->prepare("UPDATE resumes SET position = ? WHERE id = ?");
 $stmt->execute([$position_id, $resume_id]);
 
 // FILE PATH
-$filePath = __DIR__ . "/../../" . $resume['file_path'];
-
-if (!file_exists($filePath)) {
+$uploadRoot = realpath(__DIR__ . '/../../uploads');
+$filePath = realpath(__DIR__ . '/../../' . (string)$resume['file_path']);
+if (!$uploadRoot || !$filePath || !str_starts_with($filePath, $uploadRoot . DIRECTORY_SEPARATOR) || !is_file($filePath)) {
     die("Resume file not found");
 }
 
 // PDF TEXT EXTRACTION
-$pdftotext = __DIR__ . "/../../tools/poppler/Library/bin/pdftotext.exe";
-
-if (!file_exists($pdftotext)) {
-    die("pdftotext.exe not found");
+$pdftotext = getenv('PDFTOTEXT_PATH') ?: __DIR__ . "/../../tools/poppler/Library/bin/pdftotext.exe";
+if (!is_file($pdftotext) && function_exists('shell_exec')) {
+    $pdftotext = trim((string)shell_exec('command -v pdftotext 2>/dev/null'));
 }
 
-$command = "\"$pdftotext\" \"$filePath\" -";
+if (!file_exists($pdftotext)) {
+    die("PDF text extraction is not configured on this server.");
+}
+
+$command = escapeshellarg($pdftotext) . ' -f 1 -l 20 ' . escapeshellarg($filePath) . ' -';
 $text = shell_exec($command);
+$stderrRedirect = PHP_OS_FAMILY === 'Windows' ? '2>NUL' : '2>/dev/null';
 
 // Some resumes are image-only PDFs. If Poppler cannot extract readable text,
 // use Tesseract OCR when it is installed and render each page through Poppler.
 $hasReadableText = is_string($text) && preg_match('/[a-z0-9]{2,}/i', $text);
 if (!$hasReadableText) {
     $popplerDir = dirname($pdftotext);
-    $pdftoppm = $popplerDir . DIRECTORY_SEPARATOR . 'pdftoppm.exe';
+    $pdftoppm = getenv('PDFTOPPM_PATH') ?: $popplerDir . DIRECTORY_SEPARATOR . 'pdftoppm.exe';
+    if (!is_file($pdftoppm) && function_exists('shell_exec')) {
+        $pdftoppm = trim((string)shell_exec('command -v pdftoppm 2>/dev/null'));
+    }
     $tesseractCandidates = array_filter([
         getenv('TESSERACT_PATH') ?: null,
         __DIR__ . "/../../tools/tesseract/tesseract.exe",
         'C:\\Program Files\\Tesseract-OCR\\tesseract.exe',
-        'C:\\Program Files (x86)\\Tesseract-OCR\\tesseract.exe'
+        'C:\\Program Files (x86)\\Tesseract-OCR\\tesseract.exe',
+        function_exists('shell_exec') ? trim((string)shell_exec('command -v tesseract 2>/dev/null')) : null
     ]);
     $tesseract = null;
     foreach ($tesseractCandidates as $candidate) {
@@ -98,11 +122,11 @@ if (!$hasReadableText) {
         $ocrDir = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'resume-ocr-' . bin2hex(random_bytes(8));
         if (mkdir($ocrDir, 0700)) {
             $imagePrefix = $ocrDir . DIRECTORY_SEPARATOR . 'page';
-            $renderCommand = escapeshellarg($pdftoppm) . ' -png -r 250 ' . escapeshellarg($filePath) . ' ' . escapeshellarg($imagePrefix) . ' 2>NUL';
+            $renderCommand = escapeshellarg($pdftoppm) . ' -f 1 -l 20 -png -r 180 ' . escapeshellarg($filePath) . ' ' . escapeshellarg($imagePrefix) . ' ' . $stderrRedirect;
             shell_exec($renderCommand);
             $ocrText = [];
             foreach (glob($imagePrefix . '-*.png') ?: [] as $pageImage) {
-                $ocrCommand = escapeshellarg($tesseract) . ' ' . escapeshellarg($pageImage) . ' stdout -l eng 2>NUL';
+                $ocrCommand = escapeshellarg($tesseract) . ' ' . escapeshellarg($pageImage) . ' stdout -l eng ' . $stderrRedirect;
                 $pageText = shell_exec($ocrCommand);
                 if (is_string($pageText) && trim($pageText) !== '') {
                     $ocrText[] = $pageText;

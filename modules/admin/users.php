@@ -1,7 +1,5 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . "/../../config/config.php";
 require_once __DIR__ . "/../../config/db.php";
 
@@ -33,7 +31,7 @@ $totalPages = ceil($totalUsers / $limit);
 /* =========================
    FETCH USERS
 =========================*/
-$stmt = $pdo->prepare("SELECT id, name, email, role, status, created_at FROM users ORDER BY CASE WHEN role = 'admin' THEN 0 ELSE 1 END, id DESC LIMIT ? OFFSET ?");
+$stmt = $pdo->prepare("SELECT id, name, email, role, status, lock_reason, locked_by_name, created_at FROM users ORDER BY CASE WHEN role = 'admin' THEN 0 ELSE 1 END, id DESC LIMIT ? OFFSET ?");
 $stmt->bindValue(1, $limit, PDO::PARAM_INT);
 $stmt->bindValue(2, $offset, PDO::PARAM_INT);
 $stmt->execute();
@@ -97,7 +95,7 @@ require_once __DIR__ . "/../../templates/header.php";
                             </td>
 
                             <td class="p-3 text-blue-400">
-                                <a href="<?php echo BASE_URL; ?>index.php?page=admin_user&id=<?php echo $u['id']; ?>">
+                                <a href="<?php echo BASE_URL; ?>index.php?page=admin_user&id=<?php echo (int)$u['id']; ?>">
                                     <?php echo htmlspecialchars($u['name']); ?>
                                 </a>
                             </td>
@@ -115,6 +113,13 @@ require_once __DIR__ . "/../../templates/header.php";
                                     <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold <?php echo (int)$u['status'] === 1 ? 'border-teal-200/15 bg-teal-200/[.06] text-teal-100' : 'border-rose-200/15 bg-rose-200/[.06] text-rose-200'; ?>">
                                         <?php echo (int)$u['status'] === 1 ? 'Active' : 'Locked'; ?>
                                     </span>
+                                    <?php if ((int)$u['status'] !== 1): ?>
+                                        <span class="mt-1 block max-w-56 text-xs leading-5 text-slate-400">
+                                            <?php echo $u['lock_reason'] === 'failed_attempts'
+                                                ? 'Locked after 10 failed login attempts'
+                                                : 'Locked by admin' . ($u['locked_by_name'] ? ': ' . htmlspecialchars($u['locked_by_name'], ENT_QUOTES, 'UTF-8') : ''); ?>
+                                        </span>
+                                    <?php endif; ?>
                                 <?php else: ?>
                                     <span class="text-xs text-slate-500">Admin account</span>
                                 <?php endif; ?>
@@ -212,7 +217,8 @@ require_once __DIR__ . "/../../templates/header.php";
             <input type="hidden" name="p" value="<?php echo (int)$page; ?>">
             <div><label for="userName" class="mb-1.5 block text-sm font-medium text-slate-300">Full name</label><input id="userName" name="name" required maxlength="100" class="w-full rounded-xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white placeholder:text-slate-500" placeholder="Enter full name"></div>
             <div><label for="userEmail" class="mb-1.5 block text-sm font-medium text-slate-300">Email address</label><input id="userEmail" name="email" type="email" required maxlength="150" class="w-full rounded-xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white placeholder:text-slate-500" placeholder="name@example.com"></div>
-            <div id="userPasswordWrap"><label for="userPassword" class="mb-1.5 block text-sm font-medium text-slate-300">Password</label><div class="relative"><input id="userPassword" name="password" type="password" minlength="8" autocomplete="new-password" class="w-full rounded-xl border border-white/10 bg-slate-950/40 px-4 py-3 pr-16 text-white placeholder:text-slate-500" placeholder="At least 8 characters"><button type="button" data-password-toggle aria-controls="userPassword" aria-label="Show password" class="absolute inset-y-0 right-3 my-auto h-9 rounded-lg px-2 text-sm font-semibold text-teal-200 transition hover:bg-white/[.06] hover:text-white">Show</button></div><p id="passwordHint" class="mt-1 text-xs text-slate-500">Required for a new account.</p></div>
+            <div id="userPasswordWrap"><label for="userPassword" class="mb-1.5 block text-sm font-medium text-slate-300">Password</label><div class="relative"><input id="userPassword" name="password" type="password" minlength="12" autocomplete="new-password" class="w-full rounded-xl border border-white/10 bg-slate-950/40 px-4 py-3 pr-16 text-white placeholder:text-slate-500" placeholder="At least 12 characters"><button type="button" data-password-toggle aria-controls="userPassword" aria-label="Show password" class="absolute inset-y-0 right-3 my-auto h-9 rounded-lg px-2 text-sm font-semibold text-teal-200 transition hover:bg-white/[.06] hover:text-white">Show</button></div><p id="passwordHint" class="mt-1 text-xs text-slate-500">Required for a new account.</p></div>
+            <div id="userConfirmPasswordWrap"><label for="userConfirmPassword" class="mb-1.5 block text-sm font-medium text-slate-300">Confirm password</label><div class="relative"><input id="userConfirmPassword" name="password_confirmation" type="password" minlength="12" autocomplete="new-password" required class="w-full rounded-xl border border-white/10 bg-slate-950/40 px-4 py-3 pr-16 text-white placeholder:text-slate-500" placeholder="Re-enter password"><button type="button" data-password-toggle aria-controls="userConfirmPassword" aria-label="Show password" class="absolute inset-y-0 right-3 my-auto h-9 rounded-lg px-2 text-sm font-semibold text-teal-200 transition hover:bg-white/[.06] hover:text-white">Show</button></div><p id="confirmPasswordHint" class="mt-1 text-xs text-slate-500">Required for a new account.</p></div>
             <div id="userRoleWrap"><label for="userRole" class="mb-1.5 block text-sm font-medium text-slate-300">Role</label><select id="userRole" name="role" style="color-scheme:dark" class="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white"><option value="user">User</option><option value="admin">Administrator</option></select></div>
             <div class="flex justify-end gap-3 pt-2"><button type="button" onclick="closeUserModal()" class="rounded-xl border border-white/10 bg-white/[.04] px-4 py-2.5 text-sm font-semibold text-slate-300">Cancel</button><button id="userSubmit" type="submit" class="rounded-xl bg-gradient-to-r from-[#9af2d5] to-[#67d9f3] px-5 py-2.5 text-sm font-bold text-[#06131a]">Create user</button></div>
         </form>
@@ -246,11 +252,14 @@ function hideModal(modal) { modal.classList.add('hidden'); modal.classList.remov
 function openCreateUserModal() {
     userForm.reset();
     resetPasswordVisibility(document.getElementById('userPassword'));
+    resetPasswordVisibility(document.getElementById('userConfirmPassword'));
     document.getElementById('userId').value = '';
     document.getElementById('userModalTitle').textContent = 'Add user';
     document.getElementById('userModalHint').textContent = 'Create an account for your team.';
     document.getElementById('userSubmit').textContent = 'Create user';
     document.getElementById('userPassword').required = true;
+    document.getElementById('userConfirmPassword').required = true;
+    document.getElementById('confirmPasswordHint').textContent = 'Required for a new account.';
     document.getElementById('passwordHint').textContent = 'Required for a new account.';
     document.getElementById('userRoleWrap').classList.remove('hidden');
     document.getElementById('userRole').disabled = false;
@@ -260,6 +269,7 @@ function openCreateUserModal() {
 function openEditUserModal(button) {
     userForm.reset();
     resetPasswordVisibility(document.getElementById('userPassword'));
+    resetPasswordVisibility(document.getElementById('userConfirmPassword'));
     const isSelf = button.dataset.isSelf === '1';
     document.getElementById('userId').value = button.dataset.userId;
     document.getElementById('userName').value = button.dataset.name;
@@ -270,12 +280,19 @@ function openEditUserModal(button) {
     document.getElementById('userSubmit').textContent = 'Save changes';
     document.getElementById('userPassword').required = false;
     document.getElementById('userPassword').value = '';
+    document.getElementById('userConfirmPassword').required = false;
+    document.getElementById('userConfirmPassword').value = '';
+    document.getElementById('confirmPasswordHint').textContent = 'Required when setting a new password.';
     document.getElementById('passwordHint').textContent = 'Leave blank to keep the current password.';
     document.getElementById('userRoleWrap').classList.toggle('hidden', isSelf);
     document.getElementById('userRole').disabled = isSelf;
     showModal(userModal);
     document.getElementById('userName').focus();
 }
+document.getElementById('userPassword').addEventListener('input', event => {
+    const isCreate = document.getElementById('userId').value === '';
+    document.getElementById('userConfirmPassword').required = isCreate || event.target.value !== '';
+});
 function closeUserModal() { hideModal(userModal); }
 function openDeleteModal(button) {
     document.getElementById('deleteUserId').value = button.dataset.userId;

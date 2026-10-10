@@ -1,0 +1,68 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      APP_URL: https://${APP_DOMAIN:?Set APP_DOMAIN in .env to your domain}
+      RESUME_COOKIE_SECURE: '1'
+      RESUME_TRUST_PROXY: '1'
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-resume_analyzer}
+      DB_USER: ${DB_USER:-resume_app}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      RESUME_SMTP_HOST: ${RESUME_SMTP_HOST:-}
+      RESUME_SMTP_PORT: ${RESUME_SMTP_PORT:-587}
+      RESUME_SMTP_USERNAME: ${RESUME_SMTP_USERNAME:-}
+      RESUME_SMTP_PASSWORD: ${RESUME_SMTP_PASSWORD:-}
+      RESUME_SMTP_ENCRYPTION: ${RESUME_SMTP_ENCRYPTION:-tls}
+      RESUME_MAIL_FROM_EMAIL: ${RESUME_MAIL_FROM_EMAIL:-}
+      RESUME_MAIL_FROM_NAME: ${RESUME_MAIL_FROM_NAME:-ResumeAI}
+    volumes:
+      - resume_uploads:/var/www/html/uploads
+      - resume_reports:/var/www/html/reports
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-resume_analyzer}
+      MYSQL_USER: ${DB_USER:-resume_app}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in .env}
+    volumes:
+      - resume_mysql:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p$${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?Set APP_DOMAIN in .env to your domain}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+volumes:
+  resume_mysql:
+  resume_uploads:
+  resume_reports:
+  caddy_data:
+  caddy_config:

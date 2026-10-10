@@ -1,7 +1,5 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once __DIR__ . '/../config/session.php';
 
 // 🔒 PREVENT BACK CACHE
 header("Cache-Control: no-cache, no-store, must-revalidate");
@@ -12,6 +10,13 @@ require_once __DIR__ . "/../config/config.php";
 
 $user_name = $_SESSION['user_name'] ?? 'Guest';
 $user_role = $_SESSION['role'] ?? 'user';
+$isDeveloperPage = (($_GET['page'] ?? '') === 'developer');
+$showAppNav = !$isDeveloperPage || isset($_SESSION['user_id']);
+$currentPage = (string)($_GET['page'] ?? '');
+$navAttributes = static function (array $pages, string $base = 'app-link') use ($currentPage): string {
+    $active = in_array($currentPage, $pages, true);
+    return 'class="' . $base . ($active ? ' active' : '') . '"' . ($active ? ' aria-current="page"' : '');
+};
 ?>
 
 <!DOCTYPE html>
@@ -35,8 +40,15 @@ body { background: radial-gradient(ellipse at 15% 12%, rgba(72,104,255,.13), tra
 body::before { content:""; position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:.35; background-image:linear-gradient(rgba(142,166,208,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(142,166,208,.035) 1px,transparent 1px); background-size:58px 58px; mask-image:linear-gradient(to bottom,black,transparent 85%); }
 .app-nav { border-bottom:1px solid rgba(255,255,255,.08); background:rgba(8,13,27,.78); backdrop-filter:blur(20px); }
 .app-brand-mark { display:grid; place-items:center; width:2rem; height:2rem; border-radius:.7rem; color:#07131e; background:linear-gradient(145deg,#83ffe4,#49c8fc); box-shadow:0 0 25px rgba(73,200,252,.25); }
-.app-link { color:#9aa8bf; transition:color .2s,background .2s; }
-.app-link:hover, .app-link.active { color:#9cefe1; }
+.app-link { display:inline-flex; align-items:center; border:1px solid transparent; border-radius:.65rem; padding:.45rem .65rem; color:#9aa8bf; transition:color .2s,background .2s,border-color .2s; }
+.app-link:hover, .app-link.active { color:#9cefe1; background:rgba(85,212,194,.08); }
+.app-link.active { border-color:rgba(125,230,220,.16); box-shadow:inset 0 -2px rgba(125,230,220,.7); }
+.mobile-nav-link { display:block; border-radius:.55rem; color:#cbd5e1; transition:color .2s,background .2s; }
+.mobile-nav-link.active { color:#9cefe1; background:rgba(85,212,194,.1); font-weight:650; }
+.account-menu > summary::-webkit-details-marker { display:none; }
+.account-dropdown { visibility:hidden; opacity:0; transform:translateY(-.35rem); transition:opacity .18s ease,transform .18s ease,visibility .18s; }
+.account-menu[open] .account-dropdown, .account-menu:hover .account-dropdown, .account-menu:focus-within .account-dropdown { visibility:visible; opacity:1; transform:translateY(0); }
+.account-dropdown a.active { color:#9cefe1; background:rgba(85,212,194,.1); }
 .surface-card, .stat-card, .card, .app-table-wrap { border:1px solid rgba(255,255,255,.09); background:linear-gradient(145deg,rgba(25,36,59,.76),rgba(13,20,36,.8)); box-shadow:0 18px 50px rgba(0,0,0,.14),inset 0 1px rgba(255,255,255,.035); backdrop-filter:blur(16px); }
 .stat-card { padding:1.3rem; border-radius:1.1rem; text-align:left; }
 .stat-card h3 { color:#91a0b7; font-size:.8rem; font-weight:600; letter-spacing:.02em; }
@@ -72,6 +84,7 @@ button, a { -webkit-tap-highlight-color:transparent; }
 
 <body class="text-white min-h-screen flex flex-col">
 
+<?php if ($showAppNav): ?>
 <!-- NAVBAR -->
 <nav class="app-nav fixed w-full top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
@@ -85,30 +98,28 @@ button, a { -webkit-tap-highlight-color:transparent; }
         <!-- DESKTOP MENU -->
         <div class="hidden md:flex items-center space-x-6">
 
-            <a href="<?php echo BASE_URL; ?>dashboard" class="app-link">Dashboard</a>
-            <a href="<?php echo BASE_URL; ?>resumes" class="app-link">Resumes</a>
-            <a href="<?php echo BASE_URL; ?>upload" class="app-link">Upload</a>
-            <a href="<?php echo BASE_URL; ?>history" class="app-link">History</a>
+            <a href="<?php echo BASE_URL; ?>dashboard" <?php echo $navAttributes(['dashboard']); ?>>Dashboard</a>
+            <a href="<?php echo BASE_URL; ?>resumes" <?php echo $navAttributes(['resumes']); ?>>Resumes</a>
+            <a href="<?php echo BASE_URL; ?>upload" <?php echo $navAttributes(['upload']); ?>>Upload</a>
+            <a href="<?php echo BASE_URL; ?>history" <?php echo $navAttributes(['history']); ?>>Analyses report</a>
             <!-- 🔥 ADMIN MENU -->
             <?php if ($user_role === 'admin'): ?>
-                <a class="app-link" href="<?php echo BASE_URL; ?>index.php?page=admin_users">Users</a>
-                <a class="app-link" href="<?php echo BASE_URL; ?>index.php?page=admin_resumes">All Resumes</a>
-                <a class="app-link" href="<?php echo BASE_URL; ?>index.php?page=admin_analysis">Analytics</a>
-                <a class="app-link" href="<?php echo BASE_URL; ?>index.php?page=admin_audit_logs">Audit log</a>
+                <a href="<?php echo BASE_URL; ?>index.php?page=admin_users" <?php echo $navAttributes(['admin_users', 'admin_user']); ?>>Users</a>
+                <a href="<?php echo BASE_URL; ?>index.php?page=admin_resumes" <?php echo $navAttributes(['admin_resumes', 'analyze_admin']); ?>>All Resumes</a>
+                <a href="<?php echo BASE_URL; ?>index.php?page=admin_analysis" <?php echo $navAttributes(['admin_analysis']); ?>>Analytics</a>
+                <a href="<?php echo BASE_URL; ?>index.php?page=admin_audit_logs" <?php echo $navAttributes(['admin_audit_logs']); ?>>Audit log</a>
             <?php endif; ?>
-            <!-- USER -->
-            <span class="border border-white/10 bg-white/[.04] px-3 py-1.5 rounded-xl text-sm text-slate-300">
-                👤 <?php echo htmlspecialchars($user_name); ?>
-                 <?php if ($user_role === 'admin'): ?>
-                 <span class="text-yellow-400 font-semibold">Admin</span>
-                  <?php endif; ?>
-            </span>
-
-            <!-- LOGOUT -->
-            <a href="<?php echo BASE_URL; ?>modules/auth/logout.php"
-               class="border border-rose-300/15 bg-rose-300/[.07] px-3 py-1.5 rounded-xl text-rose-200 hover:bg-rose-300/[.13] transition">
-                Logout
-            </a>
+            <details class="account-menu relative">
+                <summary class="flex cursor-pointer list-none items-center gap-2 rounded-xl border border-white/10 bg-white/[.04] px-3 py-1.5 text-sm text-slate-300 transition hover:bg-white/[.08]">
+                    <span aria-hidden="true">👤</span>
+                    <span><?php echo htmlspecialchars($user_name, ENT_QUOTES, 'UTF-8'); ?><?php if ($user_role === 'admin'): ?> <span class="font-semibold text-yellow-400">Admin</span><?php endif; ?></span>
+                    <svg class="h-3.5 w-3.5 text-slate-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.22 7.47a.75.75 0 0 1 1.06 0L10 11.19l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 8.53a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd"/></svg>
+                </summary>
+                <div class="account-dropdown absolute right-0 top-full z-[70] mt-2 w-48 rounded-xl border border-white/10 bg-[#101a2b] p-1.5 shadow-2xl shadow-black/40">
+                    <a href="<?php echo BASE_URL; ?>profile" <?php echo $navAttributes(['profile'], 'block rounded-lg px-3 py-2.5 text-sm text-slate-200 transition hover:bg-white/[.07] hover:text-teal-100'); ?>>Profile</a>
+                    <form action="<?php echo BASE_URL; ?>modules/auth/logout.php" method="POST"><input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8'); ?>"><button type="submit" class="block w-full rounded-lg px-3 py-2.5 text-left text-sm text-rose-200 transition hover:bg-rose-200/[.08]">Logout</button></form>
+                </div>
+            </details>
         </div>
 
         <!-- MOBILE BUTTON -->
@@ -120,32 +131,26 @@ button, a { -webkit-tap-highlight-color:transparent; }
     <!-- MOBILE MENU -->
     <div id="mobileMenu" class="hidden md:hidden flex flex-col border-t border-white/10 bg-[#0b1221]/95 px-4 pb-4 backdrop-blur-xl">
 
-        <a href="<?php echo BASE_URL; ?>dashboard" class="py-2 border-b border-white/10">Dashboard</a>
-        <a href="<?php echo BASE_URL; ?>resumes" class="py-2 border-b border-white/10">Resumes</a>
-        <a href="<?php echo BASE_URL; ?>upload" class="py-2 border-b border-white/10">Upload</a>
-        <a href="<?php echo BASE_URL; ?>history" class="py-2 border-b border-white/10">History</a>
+        <a href="<?php echo BASE_URL; ?>dashboard" <?php echo $navAttributes(['dashboard'], 'mobile-nav-link py-2 border-b border-white/10'); ?>>Dashboard</a>
+        <a href="<?php echo BASE_URL; ?>resumes" <?php echo $navAttributes(['resumes'], 'mobile-nav-link py-2 border-b border-white/10'); ?>>Resumes</a>
+        <a href="<?php echo BASE_URL; ?>upload" <?php echo $navAttributes(['upload'], 'mobile-nav-link py-2 border-b border-white/10'); ?>>Upload</a>
+        <a href="<?php echo BASE_URL; ?>history" <?php echo $navAttributes(['history'], 'mobile-nav-link py-2 border-b border-white/10'); ?>>Analyses report</a>
 
         <!-- 🔥 ADMIN MENU MOBILE -->
         <?php if ($user_role === 'admin'): ?>
             <span class="py-2 text-teal-200 font-semibold border-b border-white/10">Admin</span>
 
-            <a href="<?php echo BASE_URL; ?>admin" class="py-2 border-b border-white/10">Admin Panel</a>
-            <a href="<?php echo BASE_URL; ?>index.php?page=admin_users">Users</a>
-            <a href="<?php echo BASE_URL; ?>index.php?page=admin_resumes">All Resumes</a>
-            <a href="<?php echo BASE_URL; ?>index.php?page=admin_analysis">Analytics</a>
-            <a href="<?php echo BASE_URL; ?>index.php?page=admin_audit_logs" class="py-2 border-b border-white/10">Audit log</a>
+            <a href="<?php echo BASE_URL; ?>admin" <?php echo $navAttributes(['admin'], 'mobile-nav-link py-2 border-b border-white/10'); ?>>Admin Panel</a>
+            <a href="<?php echo BASE_URL; ?>index.php?page=admin_users" <?php echo $navAttributes(['admin_users', 'admin_user'], 'mobile-nav-link py-2'); ?>>Users</a>
+            <a href="<?php echo BASE_URL; ?>index.php?page=admin_resumes" <?php echo $navAttributes(['admin_resumes', 'analyze_admin'], 'mobile-nav-link py-2'); ?>>All Resumes</a>
+            <a href="<?php echo BASE_URL; ?>index.php?page=admin_analysis" <?php echo $navAttributes(['admin_analysis'], 'mobile-nav-link py-2'); ?>>Analytics</a>
+            <a href="<?php echo BASE_URL; ?>index.php?page=admin_audit_logs" <?php echo $navAttributes(['admin_audit_logs'], 'mobile-nav-link py-2 border-b border-white/10'); ?>>Audit log</a>
         <?php endif; ?>
 
-        <!-- USER -->
-        <span class="py-2 text-slate-300 border-b border-white/10">
-            👤 <?php echo htmlspecialchars($user_name); ?>
-        </span>
+        <a href="<?php echo BASE_URL; ?>profile" <?php echo $navAttributes(['profile'], 'mobile-nav-link py-2 border-b border-white/10'); ?>>Profile · <?php echo htmlspecialchars($user_name, ENT_QUOTES, 'UTF-8'); ?></a>
 
         <!-- LOGOUT -->
-        <a href="<?php echo BASE_URL; ?>modules/auth/logout.php"
-           class="py-2 text-rose-200">
-            Logout
-        </a>
+        <form action="<?php echo BASE_URL; ?>modules/auth/logout.php" method="POST" class="py-2"><input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8'); ?>"><button type="submit" class="text-rose-200">Logout</button></form>
     </div>
 </nav>
 
@@ -155,11 +160,26 @@ document.addEventListener("DOMContentLoaded", function() {
     const btn = document.getElementById("menuBtn");
     const menu = document.getElementById("mobileMenu");
 
-    btn.addEventListener("click", function() {
-        menu.classList.toggle("hidden");
+    if (btn && menu) {
+        btn.addEventListener("click", function() {
+            menu.classList.toggle("hidden");
+        });
+    }
+});
+
+document.addEventListener("click", function(event) {
+    document.querySelectorAll(".account-menu[open]").forEach(function(accountMenu) {
+        if (!accountMenu.contains(event.target)) accountMenu.removeAttribute("open");
     });
 });
+
+document.addEventListener("keydown", function(event) {
+    if (event.key === "Escape") {
+        document.querySelectorAll(".account-menu[open]").forEach(menu => menu.removeAttribute("open"));
+    }
+});
 </script>
+<?php endif; ?>
 
 <!-- PAGE CONTENT START -->
-<div class="pt-20">
+<div class="<?php echo $showAppNav ? 'pt-20' : ''; ?>">

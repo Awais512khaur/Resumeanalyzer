@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../../config/session.php';
 
 require_once __DIR__ . "/../../config/config.php";
 require_once __DIR__ . "/../../config/db.php";
@@ -61,9 +61,10 @@ $required_skills = implode(', ', get_position_required_skills($resume));
     </div>
 
     <form id="adminAnalyzeForm" action="<?php echo BASE_URL; ?>modules/analysis/process_analysis.php" method="POST" onsubmit="return handleAdminAnalyzeSubmit()">
+        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8'); ?>">
 
         <!-- HIDDEN RESUME ID -->
-        <input type="hidden" name="resume_id" value="<?php echo $resume['id']; ?>">
+        <input type="hidden" name="resume_id" value="<?php echo (int)$resume['id']; ?>">
         <input type="hidden" name="position_id" value="<?php echo (int)($resume['position'] ?? 0); ?>">
 
         <!-- JOB DESCRIPTION AUTO FILLED -->

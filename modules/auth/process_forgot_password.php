@@ -1,9 +1,10 @@
 <?php
-session_start();
+require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../config/mailer.php';
 require_once __DIR__ . '/../../config/audit.php';
+require_once __DIR__ . '/../../config/rate_limit.php';
 
 $redirect = BASE_URL . 'index.php?page=forgot_password';
 $fail = static function (string $message) use ($redirect): void {
@@ -26,11 +27,26 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 }
 
 try {
+    $ip = resume_client_ip();
+    $ipBucket = rate_limit_key('password-reset-ip', $ip);
+    $identityBucket = rate_limit_key('password-reset-identity-ip', strtolower($email) . '|' . $ip);
+    if (rate_limit_is_blocked($pdo, $ipBucket) || rate_limit_is_blocked($pdo, $identityBucket)) {
+        $_SESSION['password_reset_email'] = $email;
+        $_SESSION['password_reset_notice'] = 'If an account matches this address, a reset code will be sent. If you do not receive one, check spam or contact the administrator.';
+        header('Location: ' . BASE_URL . 'index.php?page=reset_password');
+        exit;
+    }
+    rate_limit_record_failure($pdo, $ipBucket, 15, 60, 60);
+    rate_limit_record_failure($pdo, $identityBucket, 4, 60, 60);
+
     $userQuery = $pdo->prepare('SELECT id, name, email FROM users WHERE email = ? LIMIT 1');
     $userQuery->execute([$email]);
     $user = $userQuery->fetch(PDO::FETCH_ASSOC);
     if (!$user) {
-        $fail('This email does not match any account in our system.');
+        $_SESSION['password_reset_email'] = $email;
+        $_SESSION['password_reset_notice'] = 'If an account matches this address, a reset code will be sent. If you do not receive one, check spam or contact the administrator.';
+        header('Location: ' . BASE_URL . 'index.php?page=reset_password');
+        exit;
     }
 
     $userId = (int)$user['id'];
@@ -38,7 +54,7 @@ try {
     $cooldown->execute([$userId]);
     if ($cooldown->fetchColumn()) {
         $_SESSION['password_reset_email'] = $user['email'];
-        $_SESSION['password_reset_error'] = 'A reset code was sent recently. Please wait a minute before requesting another.';
+        $_SESSION['password_reset_notice'] = 'If an account matches this address, a reset code will be sent. If you do not receive one, check spam or contact the administrator.';
         header('Location: ' . BASE_URL . 'index.php?page=reset_password');
         exit;
     }
@@ -61,19 +77,20 @@ try {
     $_SESSION['password_reset_email'] = $user['email'];
     unset($_SESSION['password_reset_user_id'], $_SESSION['password_reset_verified_at']);
     unset($_SESSION['password_reset_error']);
+    $_SESSION['password_reset_notice'] = 'If an account matches this address, a reset code will be sent. If you do not receive one, check spam or contact the administrator.';
     audit_log($pdo, 'auth.password_reset_requested', 'A password reset code was emailed.', 'user', $userId);
     header('Location: ' . BASE_URL . 'index.php?page=reset_password');
     exit;
 } catch (PDOException $exception) {
     error_log('Password reset request failed: ' . $exception->getMessage());
-    $fail('Password reset is not ready yet. Please contact the administrator.');
+    $_SESSION['password_reset_email'] = $email;
+    $_SESSION['password_reset_notice'] = 'If an account matches this address, a reset code will be sent. If you do not receive one, check spam or contact the administrator.';
+    header('Location: ' . BASE_URL . 'index.php?page=reset_password');
+    exit;
 } catch (Throwable $exception) {
     error_log('Password reset email failed: ' . $exception->getMessage());
-    if (strpos($exception->getMessage(), 'SMTP settings are missing') !== false) {
-        $fail('Email delivery is not configured. Set RESUME_SMTP_HOST, RESUME_SMTP_USERNAME, RESUME_SMTP_PASSWORD, and RESUME_MAIL_FROM_EMAIL in Windows, then restart XAMPP and Apache.');
-    }
-    if (strpos($exception->getMessage(), 'Email support is not installed') !== false) {
-        $fail('Email support is missing. Run composer install in the project folder, then try again.');
-    }
-    $fail('We could not send the reset email. Check the SMTP host, port, encryption, credentials, and Apache error log.');
+    $_SESSION['password_reset_email'] = $email;
+    $_SESSION['password_reset_notice'] = 'If an account matches this address, a reset code will be sent. If you do not receive one, check spam or contact the administrator.';
+    header('Location: ' . BASE_URL . 'index.php?page=reset_password');
+    exit;
 }

@@ -5,7 +5,7 @@ header("Expires: 0");
 require_once __DIR__ . "/../../config/config.php";
 $auth_error = $_SESSION['error'] ?? '';
 $password_reset_success = $_SESSION['password_reset_success'] ?? '';
-$account_locked = stripos($auth_error, 'account is locked') !== false;
+$account_locked = stripos($auth_error, 'locked') !== false;
 unset($_SESSION['error'], $_SESSION['password_reset_success']);
 ?>
 <!DOCTYPE html>
@@ -21,10 +21,12 @@ unset($_SESSION['error'], $_SESSION['password_reset_success']);
 <?php include_once __DIR__ . '/../../assets/CDN/tailwind.php'; ?>
 <style>
 *{box-sizing:border-box}body{margin:0;min-height:100vh;color:#f5f7ff;background:radial-gradient(ellipse at 18% 35%,rgba(72,104,255,.14),transparent 38%),radial-gradient(ellipse at 88% 70%,rgba(9,212,180,.12),transparent 35%),#080d1b;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.auth-grid{background-image:linear-gradient(rgba(142,166,208,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(142,166,208,.045) 1px,transparent 1px);background-size:58px 58px;mask-image:linear-gradient(to bottom,black,transparent 90%)}.brand-mark{display:grid;place-items:center;width:2rem;height:2rem;border-radius:.7rem;color:#07131e;background:linear-gradient(145deg,#83ffe4,#49c8fc);box-shadow:0 0 25px rgba(73,200,252,.3)}.auth-panel{border:1px solid rgba(255,255,255,.11);background:linear-gradient(145deg,rgba(25,36,59,.84),rgba(13,20,36,.88));box-shadow:0 30px 90px rgba(0,0,0,.42),inset 0 1px rgba(255,255,255,.08);backdrop-filter:blur(24px)}.auth-input{width:100%;border:1px solid rgba(255,255,255,.11);border-radius:.8rem;background:rgba(255,255,255,.045);padding:.85rem 1rem;color:#f5f7ff;outline:none;transition:border-color .2s,box-shadow .2s,background .2s}.auth-input::placeholder{color:#71809a}.auth-input:focus{border-color:rgba(117,232,216,.58);background:rgba(255,255,255,.065);box-shadow:0 0 0 3px rgba(117,232,216,.1)}.submit-btn{color:#06131a;background:linear-gradient(115deg,#9af2d5,#67d9f3);box-shadow:0 10px 35px rgba(67,207,206,.18),inset 0 1px rgba(255,255,255,.55)}.submit-btn:hover{transform:translateY(-2px);box-shadow:0 15px 42px rgba(67,207,206,.3),inset 0 1px rgba(255,255,255,.55)}.entrance{animation:enter .65s cubic-bezier(.2,.75,.3,1) both}@keyframes enter{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+.auth-network{position:fixed;inset:0;z-index:0;width:100%;height:100%;pointer-events:none;opacity:.62}
 </style>
 </head>
 <body>
 <div class="auth-grid pointer-events-none fixed inset-0" aria-hidden="true"></div>
+<canvas class="neural-network auth-network" data-neural-network data-fixed="true" aria-hidden="true"></canvas>
 <header class="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8">
   <a href="<?php echo BASE_URL; ?>" class="flex items-center gap-2.5 font-bold tracking-tight"><span class="brand-mark" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M7 3.75h7l4 4V20a.75.75 0 0 1-.75.75h-10.5A.75.75 0 0 1 6 20V4.5a.75.75 0 0 1 .75-.75Z" stroke="currentColor" stroke-width="1.8"/><path d="M14 4v4h4M9 12h6M9 15.5h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><span class="text-lg">Resume<span class="text-teal-200">AI</span></span></a>
   <a href="<?php echo BASE_URL; ?>" class="text-sm text-slate-400 transition hover:text-white">← Back to home</a>
@@ -35,6 +37,7 @@ unset($_SESSION['error'], $_SESSION['password_reset_success']);
     <?php if ($auth_error !== ''): ?><div role="alert" class="mb-5 flex gap-3 rounded-xl border px-4 py-3 text-sm <?php echo $account_locked ? 'border-amber-300/20 bg-amber-300/[.07] text-amber-100' : 'border-red-400/20 bg-red-400/[.08] text-red-200'; ?>"><span class="mt-0.5" aria-hidden="true"><?php echo $account_locked ? '🔒' : '⚠'; ?></span><span><?php echo htmlspecialchars($auth_error, ENT_QUOTES, 'UTF-8'); ?></span></div><?php endif; ?>
     <?php if ($password_reset_success !== ''): ?><div role="status" class="mb-5 rounded-xl border border-teal-200/15 bg-teal-200/[.06] px-4 py-3 text-sm text-teal-100"><?php echo htmlspecialchars($password_reset_success, ENT_QUOTES, 'UTF-8'); ?></div><?php endif; ?>
     <form action="<?php echo BASE_URL; ?>modules/auth/process_login.php" method="POST" class="space-y-5">
+      <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8'); ?>">
       <div><label for="email" class="mb-2 block text-sm font-medium text-slate-300">Email address</label><input id="email" type="email" name="email" placeholder="you@example.com" autocomplete="email" required class="auth-input"></div>
       <div><label for="password" class="mb-2 block text-sm font-medium text-slate-300">Password</label><div class="relative"><input id="password" type="password" name="password" placeholder="Enter your password" autocomplete="current-password" required class="auth-input pr-16"><button type="button" data-password-toggle aria-controls="password" aria-label="Show password" class="absolute inset-y-0 right-3 my-auto h-9 rounded-lg px-2 text-sm font-semibold text-teal-200 transition hover:bg-white/[.06] hover:text-white">Show</button></div></div>
       <div class="-mt-2 text-right"><a href="<?php echo BASE_URL; ?>index.php?page=forgot_password" class="text-sm font-medium text-teal-200 transition hover:text-teal-100">Forgot password?</a></div>
@@ -44,5 +47,6 @@ unset($_SESSION['error'], $_SESSION['password_reset_success']);
   </section>
 </main>
 <script src="<?php echo BASE_URL; ?>assets/js/password-toggle.js" defer></script>
+<script src="<?php echo BASE_URL; ?>assets/js/neural-network.js" defer></script>
 </body>
 </html>

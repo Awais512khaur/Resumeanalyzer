@@ -1,5 +1,7 @@
 <?php
-// session_start();
+require_once __DIR__ . '/../../config/session.php';
+$uploadToast = $_SESSION['upload_toast'] ?? '';
+unset($_SESSION['upload_toast']);
 // 🔒 PREVENT BACK CACHE
 header("Cache-Control: no-cache, no-store, must-revalidate");
 header("Pragma: no-cache");
@@ -15,6 +17,13 @@ if (!isset($_SESSION['user_id'])) {
 require_once __DIR__ . "/../../templates/header.php";
 ?>
 <div class="min-h-screen flex items-center justify-center px-4">
+    <?php if ($uploadToast !== ''): ?>
+        <div id="uploadToast" class="upload-toast" role="status" aria-live="polite">
+            <span class="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-amber-200/20 bg-amber-200/10 text-amber-200" aria-hidden="true">!</span>
+            <p class="flex-1 text-sm leading-6"><?php echo htmlspecialchars($uploadToast, ENT_QUOTES, 'UTF-8'); ?></p>
+            <button type="button" id="dismissUploadToast" class="-mr-1 -mt-1 rounded-lg px-2 py-1 text-slate-400 hover:text-white" aria-label="Dismiss notification">×</button>
+        </div>
+    <?php endif; ?>
     <div class="resume-upload-card w-full max-w-xl rounded-3xl p-8">
         <h2 class="mb-6 text-center text-2xl font-bold">Upload Resume</h2>
         <style>
@@ -50,6 +59,10 @@ require_once __DIR__ . "/../../templates/header.php";
             .resume-file-preview { border: 1px solid rgba(148, 163, 184, .16); background: rgba(15, 23, 42, .48); }
             .resume-preview-frame { display: block; width: 100%; height: min(62vh, 560px); min-height: 340px; border: 0; border-radius: 12px; background: #fff; }
             .resume-preview-frame[hidden] { display: none; }
+            .upload-toast { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 100; display: flex; align-items: flex-start; gap: .8rem; width: min(25rem, calc(100vw - 2.5rem)); padding: 1rem 1.1rem; border: 1px solid rgba(103, 232, 249, .28); border-radius: 1rem; color: #e6fbf8; background: linear-gradient(145deg, rgba(21, 39, 55, .98), rgba(13, 25, 40, .98)); box-shadow: 0 20px 55px rgba(0, 0, 0, .42), 0 0 28px rgba(45, 212, 191, .1); opacity: 0; transform: translateX(calc(100% + 1.5rem)); transition: opacity .35s ease, transform .4s cubic-bezier(.2,.8,.2,1); }
+            .upload-toast.is-visible { opacity: 1; transform: translateX(0); }
+            .upload-toast.is-leaving { opacity: 0; transform: translateX(calc(100% + 1.5rem)); }
+            @media (prefers-reduced-motion: reduce) { .upload-toast { transition: none; } }
             @keyframes resume-float { 0%, 100% { transform: translateY(0) rotateY(-18deg) rotateX(7deg) rotateZ(5deg); } 50% { transform: translateY(-7px) rotateY(12deg) rotateX(-2deg) rotateZ(-3deg); } }
             @keyframes resume-orbit { to { transform: rotateX(66deg) rotateZ(342deg); } }
             @keyframes resume-upload { 0%, 100% { transform: translateY(0) rotateY(-18deg) rotateX(7deg) rotateZ(5deg); } 50% { transform: translateY(-4px) rotateY(18deg) rotateX(-6deg) rotateZ(-5deg); } }
@@ -62,6 +75,7 @@ require_once __DIR__ . "/../../templates/header.php";
               method="POST"
               enctype="multipart/form-data"
               id="uploadForm">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8'); ?>">
 
             <!-- DROP AREA -->
             <div id="dropArea"
@@ -107,7 +121,7 @@ require_once __DIR__ . "/../../templates/header.php";
             <?php if (!empty($_SESSION['error'])): ?>
                 <p class="text-red-400 mt-3 text-center">
                     <?php 
-                        echo $_SESSION['error']; 
+                        echo htmlspecialchars((string)$_SESSION['error'], ENT_QUOTES, 'UTF-8');
                         unset($_SESSION['error']); 
                     ?>
                 </p>
@@ -136,6 +150,20 @@ const previewFallback = document.getElementById("previewFallback");
 const uploadForm = document.getElementById("uploadForm");
 const uploadButton = document.getElementById("uploadButton");
 let previewObjectUrl = null;
+
+const uploadToast = document.getElementById("uploadToast");
+if (uploadToast) {
+    const dismissToast = () => {
+        uploadToast.classList.add("is-leaving");
+        window.setTimeout(() => uploadToast.remove(), 400);
+    };
+    requestAnimationFrame(() => uploadToast.classList.add("is-visible"));
+    const toastTimer = window.setTimeout(dismissToast, 4500);
+    document.getElementById("dismissUploadToast").addEventListener("click", () => {
+        window.clearTimeout(toastTimer);
+        dismissToast();
+    });
+}
 
 function openFileBrowser() {
     if (dropArea.classList.contains("is-uploading")) return;

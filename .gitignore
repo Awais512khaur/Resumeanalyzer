@@ -2,9 +2,12 @@
 *.sql
 SQL_file/
 !database/
+!database/schema.sql
 !database/migrations/
 !database/migrations/20261010_add_required_skills_to_positions.sql
 !database/migrations/20261010_create_password_reset_otps.sql
+!database/migrations/20261010_add_auth_rate_limits.sql
+!database/migrations/20261010_add_failed_login_locks.sql
 *.sqlite
 *.db
 tools/

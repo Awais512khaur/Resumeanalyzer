@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../config/db.php';
 
@@ -59,6 +59,8 @@ try {
 
 $_SESSION['password_reset_user_id'] = (int)$reset['user_id'];
 $_SESSION['password_reset_verified_at'] = time();
+session_regenerate_id(true);
+$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 unset($_SESSION['password_reset_error']);
 header('Location: ' . $redirect);
 exit;

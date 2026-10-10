@@ -1,7 +1,23 @@
 <?php
 require_once __DIR__ . "/../../templates/header.php";
 ?>
-<main class="mx-auto w-full max-w-5xl px-4 pb-16 pt-24 sm:px-6 lg:px-8">
+<?php if (empty($_SESSION['user_id'])): ?>
+<header class="app-nav sticky top-0 z-20">
+    <nav class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8" aria-label="Main navigation">
+        <a href="<?php echo BASE_URL; ?>" class="flex items-center gap-2.5 font-bold tracking-tight" aria-label="ResumeAI home">
+            <span class="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-teal-200 to-sky-400 text-slate-950 shadow-[0_0_25px_rgba(73,200,252,.3)]" aria-hidden="true">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M7 3.75h7l4 4V20a.75.75 0 0 1-.75.75h-10.5A.75.75 0 0 1 6 20V4.5a.75.75 0 0 1 .75-.75Z" stroke="currentColor" stroke-width="1.8"/><path d="M14 4v4h4M9 12h6M9 15.5h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </span>
+            <span class="text-lg">Resume<span class="text-teal-200">AI</span></span>
+        </a>
+        <div class="flex items-center gap-2 sm:gap-3">
+            <a href="<?php echo BASE_URL; ?>login" class="rounded-xl px-4 py-2 text-sm font-medium text-slate-300 transition hover:text-white">Log in</a>
+            <a href="<?php echo BASE_URL; ?>register" class="rounded-xl border border-white/10 bg-white/[.07] px-4 py-2 text-sm font-semibold transition hover:border-teal-200/30 hover:bg-white/10">Create account <span aria-hidden="true">↗</span></a>
+        </div>
+    </nav>
+</header>
+<?php endif; ?>
+<main class="mx-auto w-full max-w-5xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
     <section class="surface-card relative overflow-hidden rounded-3xl px-6 py-8 text-center sm:px-12 sm:py-12">
         <div aria-hidden="true" class="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-teal-300/10 blur-3xl"></div>
         <div aria-hidden="true" class="pointer-events-none absolute -bottom-28 -left-16 h-72 w-72 rounded-full bg-sky-400/10 blur-3xl"></div>

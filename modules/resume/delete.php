@@ -1,16 +1,20 @@
 <?php
-session_start();
+require_once __DIR__ . '/../../config/session.php';
 
 require_once __DIR__ . "/../../config/config.php";
 require_once __DIR__ . "/../../config/db.php";
 require_once __DIR__ . "/../../config/audit.php";
 
-if (!isset($_GET['id'])) {
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !resume_csrf_is_valid($_POST['csrf_token'] ?? null)) {
+    http_response_code(403);
+    exit('Invalid request.');
+}
+if (!isset($_SESSION['user_id']) || !filter_var($_POST['id'] ?? null, FILTER_VALIDATE_INT)) {
     header("Location: " . BASE_URL . "resumes");
     exit;
 }
 
-$id = $_GET['id'];
+$id = (int)$_POST['id'];
 
 // GET FILE
 $stmt = $pdo->prepare("SELECT * FROM resumes WHERE id = ?");
@@ -23,10 +27,10 @@ if ($resume && (int)$resume['user_id'] !== (int)($_SESSION['user_id'] ?? 0) && (
 }
 
 if ($resume) {
-    $filePath = __DIR__ . "/../../" . $resume['file_path'];
-
-    if (file_exists($filePath)) {
-        unlink($filePath); // delete file
+    $storageRoot = realpath(__DIR__ . '/../../uploads');
+    $filePath = realpath(__DIR__ . '/../../' . $resume['file_path']);
+    if ($storageRoot && $filePath && str_starts_with($filePath, $storageRoot . DIRECTORY_SEPARATOR) && is_file($filePath)) {
+        unlink($filePath);
     }
 
     // delete from DB

@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/rate_limit.php';
 
 /**
  * Write one auditable event without allowing a logging outage to interrupt
@@ -15,7 +16,7 @@ function audit_log(
 ): void {
     $actorId = $actorId !== null ? $actorId : (isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null);
     $actorName = $actorName !== null ? $actorName : ($_SESSION['user_name'] ?? null);
-    $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
+    $ipAddress = resume_client_ip();
     $userAgent = isset($_SERVER['HTTP_USER_AGENT']) ? substr((string)$_SERVER['HTTP_USER_AGENT'], 0, 255) : null;
 
     try {

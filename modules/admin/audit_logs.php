@@ -53,7 +53,7 @@ require_once __DIR__ . "/../../templates/header.php";
             <form method="get" action="<?php echo htmlspecialchars(BASE_URL . 'index.php', ENT_QUOTES, 'UTF-8'); ?>" class="flex items-center gap-3">
                 <input type="hidden" name="page" value="admin_audit_logs">
                 <label for="auditLimit" class="text-sm text-slate-400">Rows per page</label>
-                <select id="auditLimit" name="limit" onchange="this.form.submit()" class="rounded-xl border border-white/10 bg-slate-900/80 px-3 py-2 text-sm text-slate-100">
+                <select id="auditLimit" name="limit" onchange="this.form.submit()" style="color-scheme:dark" class="rounded-xl border border-white/10 bg-slate-900/80 px-3 py-2 text-sm text-slate-100">
                     <option value="25" <?php echo $pageSizeKey === '25' ? 'selected' : ''; ?>>25 rows</option>
                     <option value="50" <?php echo $pageSizeKey === '50' ? 'selected' : ''; ?>>50 rows</option>
                     <option value="80" <?php echo $pageSizeKey === '80' ? 'selected' : ''; ?>>80 rows</option>
@@ -116,4 +116,7 @@ require_once __DIR__ . "/../../templates/header.php";
         <?php endif; ?>
     </section>
 </main>
+<style>
+#auditLimit option { color: #f8fafc; background-color: #111827; }
+</style>
 <?php require_once __DIR__ . "/../../templates/footer.php"; ?>

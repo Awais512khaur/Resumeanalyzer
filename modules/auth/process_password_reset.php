@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../config/audit.php';
@@ -27,8 +27,8 @@ if (time() - (int)($_SESSION['password_reset_verified_at'] ?? 0) > 600) {
 }
 $password = $_POST['password'] ?? '';
 $confirmation = $_POST['password_confirmation'] ?? '';
-if (!is_string($password) || !is_string($confirmation) || strlen($password) < 8) {
-    $fail('Choose a password with at least 8 characters.');
+if (!is_string($password) || !is_string($confirmation) || strlen($password) < 12) {
+    $fail('Choose a password with at least 12 characters.');
 }
 if (!hash_equals($password, $confirmation)) {
     $fail('The passwords do not match. Please try again.');
@@ -37,7 +37,7 @@ if (!hash_equals($password, $confirmation)) {
 $userId = (int)$_SESSION['password_reset_user_id'];
 $pdo->beginTransaction();
 try {
-    $update = $pdo->prepare('UPDATE users SET password = ? WHERE id = ?');
+    $update = $pdo->prepare('UPDATE users SET password = ?, failed_login_count = 0, failed_login_until = NULL WHERE id = ?');
     $update->execute([password_hash($password, PASSWORD_DEFAULT), $userId]);
     if ($update->rowCount() !== 1) {
         throw new RuntimeException('The password reset account no longer exists.');

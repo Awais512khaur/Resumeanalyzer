@@ -47,6 +47,7 @@ unset($position);
     </div>
 
     <form id="analyzeForm" action="<?php echo BASE_URL; ?>modules/analysis/process_analysis.php" method="POST" onsubmit="return handleAnalyzeSubmit()">
+        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8'); ?>">
 
         <!-- SELECT RESUME -->
         <label class="block text-sm font-medium mb-1 text-gray-200">Select Resume:</label>
@@ -56,7 +57,7 @@ unset($position);
             <?php foreach ($resumes as $resume): ?>
                 <option 
                     class="text-black"
-                    value="<?php echo $resume['id']; ?>"
+                    value="<?php echo (int)$resume['id']; ?>"
                     <?php echo ($resume_id == $resume['id']) ? 'selected' : ''; ?>
                 >
                     <?php echo htmlspecialchars($resume['file_name']); ?>

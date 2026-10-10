@@ -1,5 +1,5 @@
 <?php
-// session_start();
+require_once __DIR__ . '/../../config/session.php';
 // 🔒 PREVENT BACK CACHE
 header("Cache-Control: no-cache, no-store, must-revalidate");
 header("Pragma: no-cache");
@@ -69,14 +69,14 @@ $resumes = $stmt->fetchAll();
                                 </a>
 
                                 <!-- ANALYZE -->
-                                <a href="<?php echo BASE_URL; ?>analyze&resume_id=<?php echo $resume['id']; ?>"
+                                <a href="<?php echo BASE_URL; ?>analyze&resume_id=<?php echo (int)$resume['id']; ?>"
                                    class="bg-green-500 px-3 py-1 rounded hover:bg-green-600">
                                     Analyze
                                 </a>
 
                                 <!-- DELETE BUTTON -->
                                 <button 
-                                    onclick="openModal(<?php echo $resume['id']; ?>)"
+                                    onclick="openModal(<?php echo (int)$resume['id']; ?>)"
                                     class="bg-red-500 px-3 py-1 rounded hover:bg-red-600">
                                     Delete
                                 </button>
@@ -117,11 +117,11 @@ $resumes = $stmt->fetchAll();
                 Cancel
             </button>
 
-            <a id="confirmDeleteBtn"
-               href="#"
-               class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
-                Delete
-            </a>
+            <form id="deleteResumeForm" action="<?php echo BASE_URL; ?>modules/resume/delete.php" method="POST">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8'); ?>">
+                <input type="hidden" name="id" id="deleteResumeId">
+                <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">Delete</button>
+            </form>
 
         </div>
 
@@ -132,10 +132,7 @@ $resumes = $stmt->fetchAll();
 <script>
 function openModal(id) {
     const modal = document.getElementById('deleteModal');
-    const btn = document.getElementById('confirmDeleteBtn');
-
-    // Set delete URL dynamically
-    btn.href = "<?php echo BASE_URL; ?>modules/resume/delete.php?id=" + id;
+    document.getElementById('deleteResumeId').value = id;
 
     modal.classList.remove('hidden');
     modal.classList.add('flex');

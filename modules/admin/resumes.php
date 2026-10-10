@@ -1,5 +1,5 @@
 <?php
-// session_start();
+require_once __DIR__ . '/../../config/session.php';
 
 require_once __DIR__ . "/../../config/config.php";
 require_once __DIR__ . "/../../config/db.php";
@@ -81,13 +81,13 @@ $resumes = $stmt->fetchAll();
                         </a>
 
                         <!-- ANALYZE -->
-                        <a href="<?php echo BASE_URL; ?>analyze_admin&resume_id=<?php echo $r['id']; ?>"
+                        <a href="<?php echo BASE_URL; ?>analyze_admin&resume_id=<?php echo (int)$r['id']; ?>"
                             class="bg-green-500 px-3 py-1 rounded hover:bg-green-600">
                             Analyze
                         </a>
 
                         <!-- DELETE -->
-                        <button onclick="openDeleteModal(<?php echo $r['id']; ?>)"
+                        <button onclick="openDeleteModal(<?php echo (int)$r['id']; ?>)"
                             class="bg-red-500 px-3 py-1 rounded hover:bg-red-600">
                             Delete
                         </button>
@@ -130,9 +130,11 @@ $resumes = $stmt->fetchAll();
                 Cancel
             </button>
 
-            <a id="confirmDelete" class="bg-red-500 px-4 py-2 rounded hover:bg-red-600">
-                Delete
-            </a>
+            <form id="deleteResumeForm" action="<?php echo BASE_URL; ?>modules/admin/delete_resume.php" method="POST">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8'); ?>">
+                <input type="hidden" name="id" id="deleteResumeId">
+                <button type="submit" class="bg-red-500 px-4 py-2 rounded hover:bg-red-600">Delete</button>
+            </form>
 
         </div>
 
@@ -145,8 +147,7 @@ function openDeleteModal(id) {
     document.getElementById('deleteModal').classList.remove('hidden');
     document.getElementById('deleteModal').classList.add('flex');
 
-    document.getElementById('confirmDelete').href =
-        "<?php echo BASE_URL; ?>modules/admin/delete_resume.php?id=" + id;
+    document.getElementById('deleteResumeId').value = id;
 }
 
 function closeModal() {

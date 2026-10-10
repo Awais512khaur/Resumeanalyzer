@@ -1,5 +1,5 @@
 <?php
-// session_start();
+require_once __DIR__ . '/../../../config/session.php';
 
 require_once __DIR__ . "/../../../config/config.php";
 require_once __DIR__ . "/../../../config/db.php";
@@ -11,14 +11,14 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
 }
 
 // GET USER ID
-$user_id = $_GET['id'] ?? null;
+$user_id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 
-if (!$user_id) {
+if (!$user_id || $user_id < 1) {
     die("User not found");
 }
 
 /* ================= USER ================= */
-$stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+$stmt = $pdo->prepare("SELECT id, name, email, role FROM users WHERE id = ?");
 $stmt->execute([$user_id]);
 $user = $stmt->fetch();
 
@@ -76,8 +76,8 @@ require_once __DIR__ . "/../../../templates/header.php";
     <!-- USER INFO -->
     <div class="bg-white/10 p-6 rounded-xl mb-6 backdrop-blur-lg">
         <h2 class="text-2xl font-bold"><?php echo htmlspecialchars($user['name']); ?></h2>
-        <p class="text-gray-300"><?php echo $user['email']; ?></p>
-        <p class="text-yellow-400 mt-2">Role: <?php echo $user['role']; ?></p>
+        <p class="text-gray-300"><?php echo htmlspecialchars($user['email'], ENT_QUOTES, 'UTF-8'); ?></p>
+        <p class="text-yellow-400 mt-2">Role: <?php echo htmlspecialchars($user['role'], ENT_QUOTES, 'UTF-8'); ?></p>
     </div>
 
     <!-- STATS -->
@@ -124,7 +124,7 @@ require_once __DIR__ . "/../../../templates/header.php";
                         <tr class="border-b border-white/10">
                             <td class="p-3"><?php echo $i + 1; ?></td>
                             <td class="p-3"><?php echo htmlspecialchars($r['file_name']); ?></td>
-                            <td class="p-3 text-blue-400"><?php echo $r['position_name'] ?? 'N/A'; ?></td>
+                            <td class="p-3 text-blue-400"><?php echo htmlspecialchars($r['position_name'] ?? 'N/A', ENT_QUOTES, 'UTF-8'); ?></td>
                             <td class="p-3"><?php echo date("d M Y", strtotime($r['created_at'])); ?></td>
                             <td class="p-3">
                                 <a href="<?php echo BASE_URL; ?>modules/resume/view.php?id=<?php echo (int)$r['id']; ?>"
@@ -149,12 +149,12 @@ require_once __DIR__ . "/../../../templates/header.php";
             <div class="bg-white/10 p-4 rounded mb-4">
                 <div class="flex justify-between">
                     <p><?php echo htmlspecialchars($a['file_name']); ?></p>
-                    <span class="text-green-400 font-bold"><?php echo $a['score']; ?>%</span>
+                    <span class="text-green-400 font-bold"><?php echo (int)$a['score']; ?>%</span>
                 </div>
 
                 <div class="w-full bg-gray-700 h-2 rounded mt-2">
                     <div class="bg-green-500 h-2 rounded"
-                         style="width: <?php echo $a['score']; ?>%">
+                         style="width: <?php echo max(0, min(100, (int)$a['score'])); ?>%">
                     </div>
                 </div>
             </div>

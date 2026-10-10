@@ -1,0 +1,14 @@
+.git
+.gitignore
+.env
+.env.*
+vendor
+tools
+uploads/*
+!uploads/.htaccess
+reports/*
+!reports/.gitkeep
+SQL_file
+test.php
+test_write.txt
+*.pdf

@@ -1,5 +1,5 @@
 <?php
-// session_start();
+require_once __DIR__ . '/../../config/session.php';
 
 require_once __DIR__ . "/../../config/config.php";
 require_once __DIR__ . "/../../config/db.php";
@@ -10,6 +10,11 @@ require_once __DIR__ . "/../analysis/position_skills.php";
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     header("Location: " . BASE_URL);
     exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !resume_csrf_is_valid($_POST['csrf_token'] ?? null)) {
+    http_response_code(403);
+    exit('Your session expired. Refresh the page and try again.');
 }
 
 $user_id = $_SESSION['user_id'];
@@ -161,12 +166,12 @@ require_once __DIR__ . "/../../templates/header.php";
 
     <!-- SEARCH -->
     <input type="text" name="search"
-        value="<?php echo $_GET['search'] ?? ''; ?>"
+        value="<?php echo htmlspecialchars((string)($_GET['search'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
         placeholder="Search position..."
         class="p-3 rounded bg-white/20 text-white">
     <!-- DATE -->
     <input type="date" name="date"
-        value="<?php echo $_GET['date'] ?? ''; ?>"
+        value="<?php echo htmlspecialchars((string)($_GET['date'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
         class="p-3 rounded bg-white/20 text-white">
 
     <!-- BUTTON -->
@@ -207,7 +212,7 @@ require_once __DIR__ . "/../../templates/header.php";
                     </td>
 
                     <td class="p-3 text-gray-300">
-                        <?php echo $p['description']; ?>
+                        <?php echo htmlspecialchars((string)$p['description'], ENT_QUOTES, 'UTF-8'); ?>
                     </td>
 
                     <td class="p-3 text-yellow-400">
@@ -221,13 +226,14 @@ require_once __DIR__ . "/../../templates/header.php";
                     <td class="p-3 text-center space-x-2">
 
                         <!-- EDIT -->
-                        <button onclick="openEditModal(<?php echo htmlspecialchars(json_encode($p)); ?>)"
+                        <button onclick="openEditModal(JSON.parse(this.dataset.position))"
+                                data-position="<?php echo htmlspecialchars(json_encode($p, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8'); ?>"
                                 class="bg-yellow-500 px-3 py-1 rounded hover:bg-yellow-600">
                             Edit
                         </button>
 
                         <!-- DELETE -->
-                        <button onclick="confirmDelete(<?php echo $p['id']; ?>)"
+                        <button onclick="confirmDelete(<?php echo (int)$p['id']; ?>)"
                                 class="bg-red-500 px-3 py-1 rounded hover:bg-red-600">
                             Delete
                         </button>
@@ -256,6 +262,7 @@ require_once __DIR__ . "/../../templates/header.php";
         </div>
 
         <form method="POST">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8'); ?>">
 
             <label class="mb-2 block text-sm font-medium text-slate-300" for="position_name">Position name</label>
             <input type="text" id="position_name" name="position_name"
@@ -284,6 +291,7 @@ require_once __DIR__ . "/../../templates/header.php";
         </div>
 
         <form method="POST">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8'); ?>">
 
             <input type="hidden" name="edit_id" id="edit_id">
 
@@ -307,6 +315,7 @@ require_once __DIR__ . "/../../templates/header.php";
     <div class="position-modal-card max-w-sm text-center">
 
         <form method="POST">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8'); ?>">
             <input type="hidden" name="delete_id" id="deleteId">
 
             <div class="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl border border-rose-300/15 bg-rose-300/[.08] text-xl text-rose-200">!</div>

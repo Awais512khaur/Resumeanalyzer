@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../../config/session.php';
 
 require_once __DIR__ . "/../../config/config.php";
 require_once __DIR__ . "/../../config/db.php";
@@ -25,6 +25,7 @@ $page = max(1, (int)($_POST['p'] ?? 1));
 $name = trim((string)($_POST['name'] ?? ''));
 $email = trim((string)($_POST['email'] ?? ''));
 $password = (string)($_POST['password'] ?? '');
+$passwordConfirmation = (string)($_POST['password_confirmation'] ?? '');
 $role = (string)($_POST['role'] ?? 'user');
 $redirect = BASE_URL . 'index.php?page=admin_users&p=' . $page;
 
@@ -58,16 +59,19 @@ try {
         $duplicate = $pdo->prepare('SELECT id FROM users WHERE email = ? AND id <> ?');
         $duplicate->execute([$email, $userId]);
         if ($duplicate->fetchColumn()) {
-            $fail('That email address is already used by another account.');
+            $fail('Email already exist');
         }
-        if ($password !== '' && strlen($password) < 8) {
-            $fail('A new password must contain at least 8 characters.');
+        if ($password !== '' && strlen($password) < 12) {
+            $fail('A new password must contain at least 12 characters.');
+        }
+        if ($password !== '' && !hash_equals($password, $passwordConfirmation)) {
+            $fail('The passwords do not match. Please confirm the password.');
         }
 
         $sql = 'UPDATE users SET name = ?, email = ?, role = ?, status = ?';
         $values = [$name, $email, $newRole, $newStatus];
         if ($password !== '') {
-            $sql .= ', password = ?';
+            $sql .= ', password = ?, failed_login_count = 0, failed_login_until = NULL';
             $values[] = password_hash($password, PASSWORD_BCRYPT);
         }
         $sql .= ' WHERE id = ?';
@@ -83,13 +87,16 @@ try {
         if (!in_array($role, ['user', 'admin'], true)) {
             $fail('Choose a valid account role.');
         }
-        if (strlen($password) < 8) {
-            $fail('Set a password with at least 8 characters for the new account.');
+        if (strlen($password) < 12) {
+            $fail('Set a password with at least 12 characters for the new account.');
+        }
+        if (!hash_equals($password, $passwordConfirmation)) {
+            $fail('The passwords do not match. Please confirm the password.');
         }
         $duplicate = $pdo->prepare('SELECT id FROM users WHERE email = ?');
         $duplicate->execute([$email]);
         if ($duplicate->fetchColumn()) {
-            $fail('That email address is already used by another account.');
+            $fail('Email already exist');
         }
 
         $pdo->prepare('INSERT INTO users (name, email, password, role, status) VALUES (?, ?, ?, ?, 1)')

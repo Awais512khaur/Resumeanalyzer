@@ -1,4 +1,6 @@
 <?php
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
 require_once __DIR__ . '/../../config/config.php';
 if (empty($_SESSION['password_reset_email'])) {
     $_SESSION['password_reset_error'] = 'Start by entering your account email address.';
@@ -16,7 +18,8 @@ if (empty($_SESSION['password_reset_csrf'])) {
 }
 $verified = !empty($_SESSION['password_reset_user_id']);
 $error = $_SESSION['password_reset_error'] ?? '';
-unset($_SESSION['password_reset_error']);
+$notice = $_SESSION['password_reset_notice'] ?? '';
+unset($_SESSION['password_reset_error'], $_SESSION['password_reset_notice']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -33,6 +36,7 @@ unset($_SESSION['password_reset_error']);
     <p class="text-xs font-bold uppercase tracking-[.2em] text-teal-200/80">Account recovery</p>
     <h1 class="mt-2 text-3xl font-bold"><?php echo $verified ? 'Choose a new password' : 'Check your email'; ?></h1>
     <p class="mt-3 text-sm leading-6 text-slate-400"><?php echo $verified ? 'Your code is verified. Set a new password for your account.' : 'Enter the six-digit code sent to ' . htmlspecialchars($_SESSION['password_reset_email'], ENT_QUOTES, 'UTF-8') . '.'; ?></p>
+    <?php if ($notice !== ''): ?><div role="status" class="mt-5 rounded-xl border border-teal-200/15 bg-teal-200/[.06] px-4 py-3 text-sm text-teal-100"><?php echo htmlspecialchars($notice, ENT_QUOTES, 'UTF-8'); ?></div><?php endif; ?>
     <?php if ($error !== ''): ?><div role="alert" class="mt-5 rounded-xl border border-rose-300/20 bg-rose-300/[.07] px-4 py-3 text-sm text-rose-100"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></div><?php endif; ?>
     <?php if (!$verified): ?>
       <form action="<?php echo BASE_URL; ?>modules/auth/verify_password_otp.php" method="POST" class="mt-6 space-y-4">
@@ -47,8 +51,8 @@ unset($_SESSION['password_reset_error']);
     <?php else: ?>
       <form action="<?php echo BASE_URL; ?>modules/auth/process_password_reset.php" method="POST" class="mt-6 space-y-4">
         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['password_reset_csrf'], ENT_QUOTES, 'UTF-8'); ?>">
-        <div><label for="new_password" class="mb-2 block text-sm font-medium text-slate-300">New password</label><div class="relative"><input id="new_password" name="password" type="password" minlength="8" autocomplete="new-password" required class="auth-input pr-16" placeholder="At least 8 characters"><button type="button" data-password-toggle aria-controls="new_password" aria-label="Show password" class="absolute inset-y-0 right-3 my-auto h-9 rounded-lg px-2 text-sm font-semibold text-teal-200">Show</button></div></div>
-        <div><label for="confirm_password" class="mb-2 block text-sm font-medium text-slate-300">Confirm new password</label><div class="relative"><input id="confirm_password" name="password_confirmation" type="password" minlength="8" autocomplete="new-password" required class="auth-input pr-16" placeholder="Enter it again"><button type="button" data-password-toggle aria-controls="confirm_password" aria-label="Show password" class="absolute inset-y-0 right-3 my-auto h-9 rounded-lg px-2 text-sm font-semibold text-teal-200">Show</button></div></div>
+        <div><label for="new_password" class="mb-2 block text-sm font-medium text-slate-300">New password</label><div class="relative"><input id="new_password" name="password" type="password" minlength="12" autocomplete="new-password" required class="auth-input pr-16" placeholder="At least 12 characters"><button type="button" data-password-toggle aria-controls="new_password" aria-label="Show password" class="absolute inset-y-0 right-3 my-auto h-9 rounded-lg px-2 text-sm font-semibold text-teal-200">Show</button></div></div>
+        <div><label for="confirm_password" class="mb-2 block text-sm font-medium text-slate-300">Confirm new password</label><div class="relative"><input id="confirm_password" name="password_confirmation" type="password" minlength="12" autocomplete="new-password" required class="auth-input pr-16" placeholder="Enter it again"><button type="button" data-password-toggle aria-controls="confirm_password" aria-label="Show password" class="absolute inset-y-0 right-3 my-auto h-9 rounded-lg px-2 text-sm font-semibold text-teal-200">Show</button></div></div>
         <button type="submit" class="submit-btn w-full rounded-xl px-5 py-3.5 font-bold">Save new password</button>
       </form>
       <script src="<?php echo BASE_URL; ?>assets/js/password-toggle.js" defer></script>

@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../../config/session.php';
 
 require_once __DIR__ . "/../../config/config.php";
 require_once __DIR__ . "/../../config/db.php";
@@ -32,6 +32,7 @@ if (!is_file($filePath)) {
 }
 
 audit_log($pdo, 'resume.viewed', 'Resume opened: ' . $resume['file_name'], 'resume', (int)$resume['id']);
+header('Cache-Control: private, no-store, no-cache, must-revalidate, max-age=0');
 header('Content-Type: application/pdf');
 header('Content-Length: ' . filesize($filePath));
 header('Content-Disposition: inline; filename="' . str_replace(['"', "\r", "\n"], '', basename((string)$resume['file_name'])) . '"');
