@@ -1,0 +1,6 @@
+# SQL and Database files
+*.sql
+SQL_file/
+*.sqlite
+*.db
+tools/

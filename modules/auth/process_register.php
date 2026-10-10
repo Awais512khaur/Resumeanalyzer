@@ -1,0 +1,56 @@
+<?php
+session_start();
+
+require_once __DIR__ . "/../../config/config.php";
+require_once __DIR__ . "/../../config/db.php";
+
+// Only allow POST
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header("Location: " . BASE_URL . "register");
+    exit;
+}
+
+// Get input safely
+$name     = trim($_POST['name'] ?? '');
+$email    = trim($_POST['email'] ?? '');
+$password = $_POST['password'] ?? '';
+
+// Basic validation
+if (empty($name) || empty($email) || empty($password)) {
+    $_SESSION['error'] = "All fields are required";
+    header("Location: " . BASE_URL . "register");
+    exit;
+}
+
+// Email format validation
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    $_SESSION['error'] = "Invalid email format";
+    header("Location: " . BASE_URL . "register");
+    exit;
+}
+
+// Check if email already exists
+$stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+$stmt->execute([$email]);
+
+if ($stmt->rowCount() > 0) {
+    $_SESSION['error'] = "Email already exists";
+    header("Location: " . BASE_URL . "register");
+    exit;
+}
+
+// Hash password
+$hashed_password = password_hash($password, PASSWORD_BCRYPT);
+
+// Insert user
+$stmt = $pdo->prepare("INSERT INTO users (name, email, password) VALUES (?, ?, ?)");
+$stmt->execute([$name, $email, $hashed_password]);
+
+// Optional: auto login after register
+$_SESSION['user_id']   = $pdo->lastInsertId();
+$_SESSION['user_name'] = $name;
+$_SESSION['role']      = 'user';
+echo $text; 
+// Redirect to dashboard
+header("Location: " . BASE_URL . "dashboard");
+exit;
