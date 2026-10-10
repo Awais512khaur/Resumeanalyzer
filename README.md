@@ -1,3 +1,6 @@
+<img width="1920" height="1080" alt="Screenshot (6)" src="https://github.com/user-attachments/assets/228f015e-e5f9-467e-8f59-9cbc771a7eb2" />
+
+
 # Resume Analyzer
 
 Resume Analyzer is a PHP and MySQL web application that extracts text from PDF resumes, compares resumes with job descriptions and required skills, calculates a match score, and can create downloadable PDF reports. Gemini is used for AI-generated analysis where configured.
