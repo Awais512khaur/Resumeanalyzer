@@ -3,6 +3,7 @@ session_start();
 
 require_once __DIR__ . "/../../config/config.php";
 require_once __DIR__ . "/../../config/db.php";
+require_once __DIR__ . "/../../config/audit.php";
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header("Location: " . BASE_URL . "upload");
@@ -43,6 +44,8 @@ $stmt->execute([
     $fileName,
     "uploads/" . $fileName
 ]);
+$resumeId = (int)$pdo->lastInsertId();
+audit_log($pdo, 'resume.uploaded', 'Resume uploaded: ' . $fileName, 'resume', $resumeId);
 
 // ✅ FIXED REDIRECT
 header("Location: " . BASE_URL . "resumes");

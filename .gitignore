@@ -1,6 +1,9 @@
 # SQL and Database files
 *.sql
 SQL_file/
+!database/
+!database/migrations/
+!database/migrations/20261010_add_required_skills_to_positions.sql
 *.sqlite
 *.db
 tools/

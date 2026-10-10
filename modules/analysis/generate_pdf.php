@@ -3,6 +3,7 @@ session_start();
 
 require_once __DIR__ . "/../../config/config.php";
 require_once __DIR__ . "/../../config/db.php";
+require_once __DIR__ . "/../../config/audit.php";
 
 // ✅ UPDATED PATH
 require_once __DIR__ . "/../../tools/tcpdf/tcpdf.php";
@@ -22,6 +23,14 @@ $result = $stmt->fetch();
 if (!$result) {
     die("Result not found");
 }
+$ownerStatement = $pdo->prepare("SELECT user_id, file_name FROM resumes WHERE id = ?");
+$ownerStatement->execute([(int)$result['resume_id']]);
+$resumeOwner = $ownerStatement->fetch();
+if (!$resumeOwner || (($_SESSION['role'] ?? '') !== 'admin' && (int)$resumeOwner['user_id'] !== (int)($_SESSION['user_id'] ?? 0))) {
+    http_response_code(403);
+    exit('You do not have permission to download this report.');
+}
+audit_log($pdo, 'analysis.report_downloaded', 'PDF report downloaded for resume: ' . $resumeOwner['file_name'], 'analysis', (int)$id);
 // FORMAT KEYWORDS & SUGGESTIONS
 $matchedArray = array_filter(explode(",", $result['matched_keywords']));
 $missingArray = array_filter(explode(",", $result['missing_keywords']));

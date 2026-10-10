@@ -3,6 +3,7 @@ session_start();
 
 require_once __DIR__ . "/../../config/config.php";
 require_once __DIR__ . "/../../config/db.php";
+require_once __DIR__ . "/../../config/audit.php";
 
 // Only allow POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -45,12 +46,14 @@ $hashed_password = password_hash($password, PASSWORD_BCRYPT);
 // Insert user
 $stmt = $pdo->prepare("INSERT INTO users (name, email, password) VALUES (?, ?, ?)");
 $stmt->execute([$name, $email, $hashed_password]);
+$newUserId = (int)$pdo->lastInsertId();
 
 // Optional: auto login after register
-$_SESSION['user_id']   = $pdo->lastInsertId();
+$_SESSION['user_id']   = $newUserId;
 $_SESSION['user_name'] = $name;
 $_SESSION['role']      = 'user';
-echo $text; 
+audit_log($pdo, 'account.registered', 'A new account was registered.', 'user', $newUserId);
+
 // Redirect to dashboard
 header("Location: " . BASE_URL . "dashboard");
 exit;

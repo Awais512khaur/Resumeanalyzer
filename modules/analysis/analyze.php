@@ -6,6 +6,7 @@ header("Expires: 0");
 
 require_once __DIR__ . "/../../config/config.php";
 require_once __DIR__ . "/../../config/db.php";
+require_once __DIR__ . "/position_skills.php";
 require_once __DIR__ . "/../../templates/header.php";
 
 if (!isset($_SESSION['user_id'])) {
@@ -22,8 +23,13 @@ $stmt->execute([$_SESSION['user_id']]);
 $resumes = $stmt->fetchAll();
 
 // GET POSITIONS
-$stmt = $pdo->query("SELECT id, name FROM positions ORDER BY name ASC");
+$stmt = $pdo->query("SELECT id, name, description, required_skills FROM positions ORDER BY name ASC");
 $positions = $stmt->fetchAll();
+foreach ($positions as &$position) {
+    $position['skills_list'] = get_position_required_skills($position);
+    $position['plain_description'] = position_description_plain_text((string)($position['description'] ?? ''));
+}
+unset($position);
 ?>
 
 <div class="max-w-4xl mx-auto px-4">
@@ -60,20 +66,27 @@ $positions = $stmt->fetchAll();
 
         <!-- 🔥 POSITION DROPDOWN -->
         <label class="block text-sm font-medium mb-1 text-gray-200">Target Position (Optional):</label>
-        <select name="position_id" class="w-full p-3 rounded mb-4 bg-white/20 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <select id="positionSelect" name="position_id" class="w-full p-3 rounded mb-3 bg-white/20 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="" class="text-black">Select Position (optional)</option>
 
             <?php foreach ($positions as $pos): ?>
-                <option class="text-black" value="<?php echo $pos['id']; ?>">
+                <option class="text-black" value="<?php echo (int)$pos['id']; ?>"
+                    data-required-skills="<?php echo htmlspecialchars(json_encode($pos['skills_list'], JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8'); ?>"
+                    data-description="<?php echo htmlspecialchars($pos['plain_description'], ENT_QUOTES, 'UTF-8'); ?>">
                     <?php echo htmlspecialchars($pos['name']); ?>
                 </option>
             <?php endforeach; ?>
         </select>
 
+        <div id="requiredSkillsPreview" class="mb-4 hidden rounded-xl border border-teal-200/10 bg-teal-200/[.04] p-4">
+            <p class="text-xs font-bold uppercase tracking-[.14em] text-teal-200">Skills used for match score</p>
+            <p id="requiredSkillsText" class="mt-2 text-sm leading-6 text-slate-300"></p>
+        </div>
+
         <!-- JOB DESCRIPTION -->
         <label class="block text-sm font-medium mb-1 text-gray-200">Job Description:</label>
-        <textarea name="job_description" rows="6" placeholder="Paste the target job description here..."
-            class="w-full p-3 rounded mb-4 bg-white/20 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></textarea>
+        <textarea id="jobDescription" name="job_description" rows="6" placeholder="Paste a job description, or select a position with required skills above..."
+            class="w-full p-3 rounded mb-4 bg-white/20 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
 
         <button type="submit" id="analyzeBtn"
             class="w-full bg-green-600 hover:bg-green-700 p-3.5 rounded-lg font-bold flex items-center justify-center gap-2 transition cursor-pointer shadow-lg">
@@ -86,6 +99,42 @@ $positions = $stmt->fetchAll();
 </div>
 
 <script>
+const positionSelect = document.getElementById('positionSelect');
+const skillsPreview = document.getElementById('requiredSkillsPreview');
+const skillsText = document.getElementById('requiredSkillsText');
+const jobDescription = document.getElementById('jobDescription');
+let autoFilledDescription = '';
+positionSelect.addEventListener('change', function () {
+    const selectedOption = this.options[this.selectedIndex];
+    const skills = JSON.parse(selectedOption.dataset.requiredSkills || '[]');
+    const roleDescription = selectedOption.dataset.description || '';
+    if (this.value && skills.length) {
+        skillsText.textContent = skills.join(' · ');
+        skillsPreview.classList.remove('hidden');
+    } else {
+        skillsPreview.classList.add('hidden');
+    }
+    if (jobDescription.value.trim() === '' || jobDescription.value === autoFilledDescription) {
+        jobDescription.value = roleDescription;
+        autoFilledDescription = roleDescription;
+    }
+    jobDescription.required = skills.length === 0;
+});
+
+document.getElementById('analyzeForm').addEventListener('submit', function (event) {
+    const selectedOption = positionSelect.options[positionSelect.selectedIndex];
+    const skills = JSON.parse(selectedOption.dataset.requiredSkills || '[]');
+    if (!jobDescription.value.trim() && skills.length === 0) {
+        event.preventDefault();
+        jobDescription.focus();
+        jobDescription.setCustomValidity('Enter a job description or select a position with required skills.');
+        jobDescription.reportValidity();
+        return;
+    }
+    jobDescription.setCustomValidity('');
+});
+jobDescription.addEventListener('input', () => jobDescription.setCustomValidity(''));
+
 function handleAnalyzeSubmit() {
     const btn = document.getElementById('analyzeBtn');
     const btnText = document.getElementById('btnText');

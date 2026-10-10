@@ -107,7 +107,7 @@ require_once __DIR__ . "/../../../templates/header.php";
     <div class="mb-10">
         <h3 class="text-xl font-bold mb-4">Resumes</h3>
 
-        <div class="bg-white/10 rounded-xl overflow-hidden">
+        <div class="app-table-wrap bg-white/10 rounded-xl overflow-x-auto">
             <table class="w-full text-left">
                 <thead class="bg-white/20">
                     <tr>
@@ -127,7 +127,7 @@ require_once __DIR__ . "/../../../templates/header.php";
                             <td class="p-3 text-blue-400"><?php echo $r['position_name'] ?? 'N/A'; ?></td>
                             <td class="p-3"><?php echo date("d M Y", strtotime($r['created_at'])); ?></td>
                             <td class="p-3">
-                                <a href="<?php echo BASE_URL . $r['file_path']; ?>"
+                                <a href="<?php echo BASE_URL; ?>modules/resume/view.php?id=<?php echo (int)$r['id']; ?>"
                                    target="_blank"
                                    class="bg-blue-500 px-3 py-1 rounded">
                                     View

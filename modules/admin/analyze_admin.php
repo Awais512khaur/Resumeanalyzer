@@ -3,6 +3,7 @@ session_start();
 
 require_once __DIR__ . "/../../config/config.php";
 require_once __DIR__ . "/../../config/db.php";
+require_once __DIR__ . "/../analysis/position_skills.php";
 require_once __DIR__ . "/../../templates/header.php";
 
 // 🔒 ADMIN CHECK
@@ -20,7 +21,7 @@ if (!$resume_id) {
 
 // 🔥 FETCH RESUME + POSITION
 $stmt = $pdo->prepare("
-    SELECT r.*, p.name as position_name, p.description
+    SELECT r.*, p.name as position_name, p.description, p.required_skills
     FROM resumes r
     LEFT JOIN positions p ON r.position = p.id
     WHERE r.id = ?
@@ -34,6 +35,7 @@ if (!$resume) {
 
 // AUTO JOB DESCRIPTION FROM POSITION
 $job_description = $resume['description'] ?? '';
+$required_skills = implode(', ', get_position_required_skills($resume));
 ?>
 
 <div class="max-w-4xl mx-auto px-4">
@@ -53,12 +55,16 @@ $job_description = $resume['description'] ?? '';
     <div class="bg-white/10 p-6 rounded-xl backdrop-blur-lg mb-6">
         <p><strong>Resume:</strong> <?php echo htmlspecialchars($resume['file_name']); ?></p>
         <p><strong>Position:</strong> <?php echo htmlspecialchars($resume['position_name'] ?? 'N/A'); ?></p>
+        <?php if ($required_skills !== ''): ?>
+            <p class="mt-2"><strong class="text-teal-200">Match score skills:</strong> <span class="text-slate-300"><?php echo htmlspecialchars($required_skills); ?></span></p>
+        <?php endif; ?>
     </div>
 
     <form id="adminAnalyzeForm" action="<?php echo BASE_URL; ?>modules/analysis/process_analysis.php" method="POST" onsubmit="return handleAdminAnalyzeSubmit()">
 
         <!-- HIDDEN RESUME ID -->
         <input type="hidden" name="resume_id" value="<?php echo $resume['id']; ?>">
+        <input type="hidden" name="position_id" value="<?php echo (int)($resume['position'] ?? 0); ?>">
 
         <!-- JOB DESCRIPTION AUTO FILLED -->
         <label class="block text-sm font-medium mb-1 text-gray-200">Job Description / Requirements:</label>

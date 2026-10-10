@@ -68,23 +68,4 @@ $avgScore = $pdo->query("SELECT AVG(score) FROM analysis_results")->fetchColumn(
 
 </div>
 
-<style>
-.card {
-    background: rgba(255,255,255,0.08);
-    padding: 20px;
-    border-radius: 16px;
-    transition: 0.3s;
-}
-.card:hover {
-    transform: translateY(-5px);
-}
-
-.stat-card {
-    background: rgba(255,255,255,0.08);
-    padding: 20px;
-    border-radius: 16px;
-    text-align: center;
-}
-</style>
-
 <?php require_once __DIR__ . "/../../templates/footer.php"; ?>

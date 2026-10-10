@@ -30,7 +30,7 @@ $resumes = $stmt->fetchAll();
 
     <h2 class="text-3xl font-bold mb-6">All Resumes</h2>
 
-    <div class="bg-white/10 backdrop-blur-lg rounded-xl overflow-hidden">
+    <div class="app-table-wrap bg-white/10 backdrop-blur-lg rounded-xl overflow-x-auto">
 
         <table class="w-full text-left">
 
@@ -72,6 +72,13 @@ $resumes = $stmt->fetchAll();
                     </td>
 
                     <td class="p-3 text-center space-x-2">
+
+                        <!-- VIEW ORIGINAL RESUME -->
+                        <a href="<?php echo BASE_URL; ?>modules/resume/view.php?id=<?php echo (int)$r['id']; ?>"
+                            target="_blank" rel="noopener noreferrer"
+                            class="inline-block rounded-lg border border-teal-200/20 bg-teal-200/[.08] px-3 py-1 text-teal-100 hover:bg-teal-200/[.15]">
+                            View
+                        </a>
 
                         <!-- ANALYZE -->
                         <a href="<?php echo BASE_URL; ?>analyze_admin&resume_id=<?php echo $r['id']; ?>"

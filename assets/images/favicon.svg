@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#4f46e5" />
+    </linearGradient>
+
+    <!-- AI Sparkle Gradient -->
+    <linearGradient id="sparkleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#22c55e" />
+    </linearGradient>
+
+    <!-- Shadow for sheet -->
+    <filter id="cardShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- Base Rounded Squircle -->
+  <rect width="64" height="64" rx="16" fill="url(#bgGrad)" />
+
+  <!-- Outer subtle border -->
+  <rect x="0.75" y="0.75" width="62.5" height="62.5" rx="15.25" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+
+  <!-- Resume Sheet (White Document with folded ear) -->
+  <g filter="url(#cardShadow)">
+    <path d="M17 12C17 10.8954 17.8954 10 19 10H35L47 22V50C47 51.1046 46.1046 52 45 52H19C17.8954 52 17 51.1046 17 50V12Z" fill="#FFFFFF" />
+    <!-- Folded Corner -->
+    <path d="M35 10V20C35 21.1046 35.8954 22 37 22H47L35 10Z" fill="#93C5FD" />
+  </g>
+
+  <!-- Document Text Lines -->
+  <rect x="22" y="27" width="18" height="3" rx="1.5" fill="#3B82F6" />
+  <rect x="22" y="33" width="14" height="3" rx="1.5" fill="#64748B" />
+  <rect x="22" y="39" width="11" height="3" rx="1.5" fill="#94A3B8" />
+
+  <!-- AI Sparkle Badge on lower-right -->
+  <circle cx="45" cy="43" r="11" fill="#0F172A" />
+  <circle cx="45" cy="43" r="9" fill="url(#sparkleGrad)" />
+  <!-- 4-point star -->
+  <path d="M45 36.5L46.6 41.4L51.5 43L46.6 44.6L45 49.5L43.4 44.6L38.5 43L43.4 41.4L45 36.5Z" fill="#FFFFFF" />
+</svg>

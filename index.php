@@ -9,6 +9,16 @@ if (!isset($_GET['page'])) {
 }
 // Get page
 $page = trim($_GET['page'], '/');
+
+// Direct favicon request handler
+if ($page === 'favicon.ico') {
+    $ico = __DIR__ . '/favicon.ico';
+    if (file_exists($ico)) {
+        header('Content-Type: image/x-icon');
+        readfile($ico);
+        exit;
+    }
+}
 // ROUTING
 switch ($page) {
     case 'login':
@@ -49,6 +59,9 @@ switch ($page) {
         break;
     case 'admin_analysis':
         require __DIR__ . "/modules/admin/analysis.php";
+        break;
+    case 'admin_audit_logs':
+        require __DIR__ . "/modules/admin/audit_logs.php";
         break;
     case 'admin_positions':
         require __DIR__ . "/modules/admin/positions.php";
