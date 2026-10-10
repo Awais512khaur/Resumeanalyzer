@@ -4,8 +4,9 @@ header("Pragma: no-cache");
 header("Expires: 0");
 require_once __DIR__ . "/../../config/config.php";
 $auth_error = $_SESSION['error'] ?? '';
+$password_reset_success = $_SESSION['password_reset_success'] ?? '';
 $account_locked = stripos($auth_error, 'account is locked') !== false;
-unset($_SESSION['error']);
+unset($_SESSION['error'], $_SESSION['password_reset_success']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -32,9 +33,11 @@ unset($_SESSION['error']);
   <section class="auth-panel entrance w-full max-w-md rounded-3xl p-7 sm:p-9">
     <div class="mb-7 text-center"><div class="mx-auto mb-5 grid h-12 w-12 place-items-center rounded-2xl border border-teal-200/15 bg-teal-200/[.07] text-teal-200"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM5 20a7 7 0 0 1 14 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div><p class="text-xs font-bold uppercase tracking-[.2em] text-teal-200/80">Welcome back</p><h1 class="mt-2 text-3xl font-bold tracking-tight">Good to see you.</h1><p class="mt-2 text-sm text-slate-400">Log in to continue working on your next step.</p></div>
     <?php if ($auth_error !== ''): ?><div role="alert" class="mb-5 flex gap-3 rounded-xl border px-4 py-3 text-sm <?php echo $account_locked ? 'border-amber-300/20 bg-amber-300/[.07] text-amber-100' : 'border-red-400/20 bg-red-400/[.08] text-red-200'; ?>"><span class="mt-0.5" aria-hidden="true"><?php echo $account_locked ? '🔒' : '⚠'; ?></span><span><?php echo htmlspecialchars($auth_error, ENT_QUOTES, 'UTF-8'); ?></span></div><?php endif; ?>
+    <?php if ($password_reset_success !== ''): ?><div role="status" class="mb-5 rounded-xl border border-teal-200/15 bg-teal-200/[.06] px-4 py-3 text-sm text-teal-100"><?php echo htmlspecialchars($password_reset_success, ENT_QUOTES, 'UTF-8'); ?></div><?php endif; ?>
     <form action="<?php echo BASE_URL; ?>modules/auth/process_login.php" method="POST" class="space-y-5">
       <div><label for="email" class="mb-2 block text-sm font-medium text-slate-300">Email address</label><input id="email" type="email" name="email" placeholder="you@example.com" autocomplete="email" required class="auth-input"></div>
       <div><label for="password" class="mb-2 block text-sm font-medium text-slate-300">Password</label><div class="relative"><input id="password" type="password" name="password" placeholder="Enter your password" autocomplete="current-password" required class="auth-input pr-16"><button type="button" data-password-toggle aria-controls="password" aria-label="Show password" class="absolute inset-y-0 right-3 my-auto h-9 rounded-lg px-2 text-sm font-semibold text-teal-200 transition hover:bg-white/[.06] hover:text-white">Show</button></div></div>
+      <div class="-mt-2 text-right"><a href="<?php echo BASE_URL; ?>index.php?page=forgot_password" class="text-sm font-medium text-teal-200 transition hover:text-teal-100">Forgot password?</a></div>
       <button type="submit" class="submit-btn mt-1 w-full rounded-xl px-5 py-3.5 font-bold transition">Log in <span aria-hidden="true">→</span></button>
     </form>
     <p class="mt-6 text-center text-sm text-slate-400">New to ResumeAI? <a href="<?php echo BASE_URL; ?>register" class="font-semibold text-teal-200 transition hover:text-teal-100">Create an account</a></p>

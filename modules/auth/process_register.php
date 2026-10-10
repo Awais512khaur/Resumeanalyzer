@@ -15,10 +15,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $name     = trim($_POST['name'] ?? '');
 $email    = trim($_POST['email'] ?? '');
 $password = $_POST['password'] ?? '';
+$passwordConfirmation = $_POST['password_confirmation'] ?? '';
 
 // Basic validation
-if (empty($name) || empty($email) || empty($password)) {
+if (empty($name) || empty($email) || empty($password) || $passwordConfirmation === '') {
     $_SESSION['error'] = "All fields are required";
+    header("Location: " . BASE_URL . "register");
+    exit;
+}
+
+if (!hash_equals($password, $passwordConfirmation)) {
+    $_SESSION['error'] = "Passwords do not match. Please check both fields.";
     header("Location: " . BASE_URL . "register");
     exit;
 }

@@ -7,8 +7,10 @@ Resume Analyzer is a PHP and MySQL web application that extracts text from PDF r
 - Windows with [XAMPP](https://www.apachefriends.org/) installed.
 - Apache and MySQL/MariaDB enabled in the XAMPP Control Panel.
 - PHP 8.x (the version bundled with a current XAMPP release is recommended).
+- Composer, for installing the PHPMailer dependency used by email-based password resets.
 - PHP extensions enabled in XAMPP:
   - `pdo_mysql` for the database connection.
+  - `openssl` for encrypted SMTP connections.
   - `curl` and `mbstring` for Gemini requests and text handling.
   - `fileinfo` for checking uploaded resume files.
 - Git, if you want to install TCPDF with the command below.
@@ -30,6 +32,13 @@ Resume Analyzer is a PHP and MySQL web application that extracts text from PDF r
 
 - If the folder has a different name, open the project URL using that name. `BASE_URL` is detected from the project directory.
 - Open a terminal in the project root before running the following setup commands.
+- Install the PHP mail dependency:
+
+  ```powershell
+  composer install
+  ```
+
+- PHPMailer is installed through Composer and is required for password reset emails.
 
 ## 3. Create the tools and upload folders
 
@@ -124,6 +133,12 @@ Resume Analyzer is a PHP and MySQL web application that extracts text from PDF r
 
 - This creates `audit_logs`, copies any old `activity_logs` entries into it, then removes the five legacy tables that the application does not use: `activity_logs`, `analysis_keywords`, `job_descriptions`, `keywords`, and `reports`. The current local database was checked and each of those tables had zero rows. Back up another database before applying this cleanup migration if it contains data you want to keep.
 
+- Import the password reset OTP table migration:
+
+  ```text
+  database/migrations/20261010_create_password_reset_otps.sql
+  ```
+
 - To run the migration in phpMyAdmin, select `resume_analyzer`, open the **Import** tab, choose the migration file, then click **Import** or **Go**.
 - If you are setting up an existing database that already has the tables, keep your data and run only the migration if the `positions.required_skills` column is missing. Do not import the base schema over an existing database unless you intend to replace its data.
 - Open `config/db.php` and update the host, database name, username, and password if your MySQL settings differ from the XAMPP defaults (`localhost`, `resume_analyzer`, `root`, and an empty password).
@@ -134,13 +149,33 @@ Resume Analyzer is a PHP and MySQL web application that extracts text from PDF r
 - Do not publish or commit a real API key. Keep it private and replace any example or previously exposed key with your own.
 - AI-generated suggestions require internet access from PHP and the PHP `curl` extension. Configure the key before relying on AI analysis.
 
-## 9. Check folder permissions
+## 9. Configure password reset email
+
+- Password reset sends a short-lived, one-time code through an SMTP email account. The SMTP sender can deliver to Gmail, Outlook, Hotmail, and other recipient addresses supported by that provider.
+- Configure these environment variables in Windows PowerShell, replacing the example values with your provider's SMTP settings:
+
+  ```powershell
+  setx RESUME_SMTP_HOST "smtp.example.com"
+  setx RESUME_SMTP_PORT "587"
+  setx RESUME_SMTP_USERNAME "your-sender@example.com"
+  setx RESUME_SMTP_PASSWORD "your-provider-app-password"
+  setx RESUME_SMTP_ENCRYPTION "tls"
+  setx RESUME_MAIL_FROM_EMAIL "your-sender@example.com"
+  setx RESUME_MAIL_FROM_NAME "ResumeAI"
+  ```
+
+- Use the SMTP host, port, and encryption required by your email provider. For authenticated accounts, use an app password or SMTP credential when the provider requires it; do not use your normal account password unless the provider explicitly supports it.
+- The `setx` commands save these values for your Windows user. Close and reopen the XAMPP Control Panel, then restart Apache so PHP can read them. If Apache runs as a Windows service, add the values as System environment variables instead.
+- Keep SMTP credentials private. Do not commit them to the repository or paste them into `config/mail.php`; that file reads the environment variables.
+- The reset flow checks whether the email exists, emails a six-digit code that expires after 10 minutes, limits code entry to five attempts, and allows a resend once per minute. The user then sets and confirms a new password.
+
+## 10. Check folder permissions
 
 - Make sure the Apache/PHP process can write uploaded files into the project `uploads` folder.
 - On a standard local XAMPP installation, the project folder is usually writable. If upload fails, grant the Windows account running Apache permission to write to `uploads`.
 - Keep this folder in place even when it is empty; it stores uploaded resume PDFs.
 
-## 10. Start and open the application
+## 11. Start and open the application
 
 - In the XAMPP Control Panel, start **Apache** and **MySQL**.
 - Open the application in a browser:
@@ -155,7 +190,7 @@ Resume Analyzer is a PHP and MySQL web application that extracts text from PDF r
 - Admins can open **Audit log** from the top navigation. It records account registration/sign-in, resume views/uploads/deletions/analysis, PDF report downloads, position changes, and administrator account/resume deletions. The page is admin-only and supports 25, 50, 80, or all rows with pagination.
 - Admins can add accounts, edit user details, and lock or unlock standard user accounts from **Manage Users**. Locked accounts cannot sign in and see a message asking them to contact an administrator. Admin accounts and the currently signed-in administrator are protected from the lock control.
 
-## 11. Verify the installation
+## 12. Verify the installation
 
 - Confirm the following files exist:
 
@@ -172,6 +207,7 @@ Resume Analyzer is a PHP and MySQL web application that extracts text from PDF r
   ```
 
 - Confirm phpMyAdmin shows the `resume_analyzer` tables and that the `positions` table has a `required_skills` column.
+- Confirm `password_reset_otps` exists and the `vendor/autoload.php` file was created by Composer.
 - Upload a text-based PDF to check extraction. For an image-only scanned PDF, verify Tesseract is installed and the English language data is available.
 
 ## Troubleshooting
@@ -183,6 +219,7 @@ Resume Analyzer is a PHP and MySQL web application that extracts text from PDF r
 - **PDF report generation fails:** Check that `tools\tcpdf\tcpdf.php` exists.
 - **Upload fails:** Check that PHP can write to `uploads` and that the PDF is within PHP's upload size limits in `php.ini` (`upload_max_filesize` and `post_max_size`). Restart Apache after changing `php.ini`.
 - **Gemini analysis fails:** Check the API key, PHP `curl` extension, internet access, and the API account's access/quota.
+- **Password reset emails do not send:** Run `composer install`, verify `password_reset_otps` exists, check the SMTP environment variables, and restart Apache. Check the Apache/PHP error log for SMTP connection details.
 
 ## Current checkout setup status
 

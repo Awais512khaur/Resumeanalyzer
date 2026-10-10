@@ -114,7 +114,15 @@ body { margin: 0; min-height: 100vh; overflow-x: hidden; color: #f5f7ff; backgro
     </div>
   </section>
 </main>
-<footer class="border-t border-white/[.07] px-5 py-6 text-center text-sm text-slate-500"><p>© <?php echo date("Y"); ?> Resume Analyzer. Built for your next step.</p></footer>
+<section class="border-t border-white/[.07] px-5 py-8 text-center" aria-label="Meet the developer">
+  <a href="<?php echo BASE_URL; ?>developer" class="inline-flex items-center gap-2 rounded-xl border border-teal-200/20 bg-teal-200/[.07] px-5 py-3 text-sm font-semibold text-teal-100 transition hover:bg-teal-200/[.12]">Meet the developer <span aria-hidden="true">→</span></a>
+</section>
+<footer class="border-t border-white/[.07] bg-[#080d1b]/60 px-5 py-6">
+  <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 sm:flex-row">
+    <p class="text-sm text-slate-500">© <?php echo date("Y"); ?> Resume Analyzer. Built for your next step.</p>
+    <?php require __DIR__ . '/../../templates/social_links.php'; ?>
+  </div>
+</footer>
 </div>
 </body>
 </html>

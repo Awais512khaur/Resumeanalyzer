@@ -4,6 +4,8 @@ SQL_file/
 !database/
 !database/migrations/
 !database/migrations/20261010_add_required_skills_to_positions.sql
+!database/migrations/20261010_create_password_reset_otps.sql
 *.sqlite
 *.db
 tools/
+vendor/

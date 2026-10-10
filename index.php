@@ -24,8 +24,17 @@ switch ($page) {
     case 'login':
         require __DIR__ . "/modules/auth/login.php";
         break;
+    case 'forgot_password':
+        require __DIR__ . "/modules/auth/forgot_password.php";
+        break;
+    case 'reset_password':
+        require __DIR__ . "/modules/auth/reset_password.php";
+        break;
     case 'register':
         require __DIR__ . "/modules/auth/register.php";
+        break;
+    case 'developer':
+        require __DIR__ . "/modules/developer/index.php";
         break;
     case 'dashboard':
         require __DIR__ . "/modules/dashboard/index.php";
