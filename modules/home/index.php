@@ -70,9 +70,9 @@ body {
     </h2> 
     <p class="text-gray-300 text-lg mb-8"> AI-powered resume analysis that helps you match job descriptions, improve your CV, and increase your chances of landing a job. </p> 
     <div class="space-x-4"> 
-        <a href="<?php echo BASE_URL; ?>/modules/auth/register.php" 
+        <a href="<?php echo BASE_URL; ?>register" 
         class="px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg text-lg font-semibold transition"> Get Started </a> 
-        <a href="<?php echo BASE_URL; ?>/modules/auth/login.php" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-lg font-semibold transition"> Login </a> 
+        <a href="<?php echo BASE_URL; ?>login" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-lg font-semibold transition"> Login </a> 
     </div> 
 </div> <!-- Floating card --> 
 <div class="mt-16 float bg-white/10 backdrop-blur-lg p-6 rounded-xl shadow-xl max-w-md"> 
