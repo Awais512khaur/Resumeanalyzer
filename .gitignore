@@ -1,6 +1,5 @@
 # SQL and Database files
 *.sql
-SQL_file/
 !database/
 !database/schema.sql
 !database/migrations/
