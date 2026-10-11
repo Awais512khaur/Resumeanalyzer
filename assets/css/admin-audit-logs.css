@@ -1,0 +1,5 @@
+/* Extracted from modules/admin/audit_logs.php */
+#auditLimit option {
+  color: #f8fafc;
+  background-color: #111827;
+}

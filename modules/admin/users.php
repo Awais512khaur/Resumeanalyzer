@@ -42,6 +42,7 @@ $userAdminError = $_SESSION['user_admin_error'] ?? '';
 unset($_SESSION['user_admin_notice'], $_SESSION['user_admin_error']);
 require_once __DIR__ . "/../../templates/header.php";
 ?>
+<link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/admin-users.css?v=1">
 
 <div class="max-w-7xl mx-auto px-4">
 
@@ -55,12 +56,6 @@ require_once __DIR__ . "/../../templates/header.php";
 
     <?php if ($userAdminNotice !== '' || $userAdminError !== ''): ?>
         <?php $toastIsError = $userAdminError !== ''; ?>
-        <style>
-            @keyframes user-toast-enter { from { opacity: 0; transform: translateX(calc(100% + 2rem)); } to { opacity: 1; transform: translateX(0); } }
-            .user-action-toast { animation: user-toast-enter .35s ease-out both; transition: opacity .3s ease, transform .3s ease; }
-            .user-action-toast.is-dismissed { opacity: 0; transform: translateX(calc(100% + 2rem)); pointer-events: none; }
-            @media (prefers-reduced-motion: reduce) { .user-action-toast { animation: none; transition: none; } }
-        </style>
         <div id="userActionToast" role="<?php echo $toastIsError ? 'alert' : 'status'; ?>" aria-live="<?php echo $toastIsError ? 'assertive' : 'polite'; ?>" class="user-action-toast fixed right-4 top-24 z-[100] w-[calc(100%-2rem)] max-w-sm rounded-2xl border px-4 py-3.5 text-sm shadow-2xl backdrop-blur-xl sm:right-6 <?php echo $toastIsError ? 'border-rose-200/20 bg-slate-900/95 text-rose-100' : 'border-teal-200/20 bg-slate-900/95 text-teal-100'; ?>">
             <div class="flex items-start gap-3"><span aria-hidden="true" class="mt-0.5"><?php echo $toastIsError ? '!' : '✓'; ?></span><span><?php echo htmlspecialchars($toastIsError ? $userAdminError : $userAdminNotice, ENT_QUOTES, 'UTF-8'); ?></span></div>
         </div>
@@ -224,9 +219,7 @@ require_once __DIR__ . "/../../templates/header.php";
         </form>
     </section>
 </div>
-<style>
-#userRole option { color: #f8fafc; background-color: #111827; }
-</style>
+
 
 <!-- Delete confirmation -->
 <div id="deleteModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-slate-950/75 p-4 backdrop-blur-sm" aria-hidden="true">

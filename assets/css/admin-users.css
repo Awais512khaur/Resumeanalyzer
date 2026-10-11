@@ -1,0 +1,33 @@
+/* Extracted from modules/admin/users.php */
+@keyframes user-toast-enter {
+  from {
+    opacity: 0;
+    transform: translateX(calc(100% + 2rem));
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.user-action-toast {
+  animation: user-toast-enter 0.35s ease-out both;
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+.user-action-toast.is-dismissed {
+  opacity: 0;
+  transform: translateX(calc(100% + 2rem));
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .user-action-toast {
+    animation: none;
+    transition: none;
+  }
+}
+
+#userRole option {
+  color: #f8fafc;
+  background-color: #111827;
+}

@@ -31,6 +31,7 @@ $pageUrl = static function ($targetPage) use ($pageSizeKey) {
 
 require_once __DIR__ . "/../../templates/header.php";
 ?>
+<link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/admin-audit-logs.css?v=1">
 <main class="mx-auto w-full max-w-7xl px-4 pb-14 pt-5 sm:px-6">
     <section class="mb-7 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -116,7 +117,4 @@ require_once __DIR__ . "/../../templates/header.php";
         <?php endif; ?>
     </section>
 </main>
-<style>
-#auditLimit option { color: #f8fafc; background-color: #111827; }
-</style>
 <?php require_once __DIR__ . "/../../templates/footer.php"; ?>

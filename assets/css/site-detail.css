@@ -1,42 +1,56 @@
 /* A quieter, more editorial finish shared by the public, account, and app pages. */
 :root {
-    color-scheme: dark;
-    --page-ink: #0c1119;
-    --panel-ink: #141c28;
-    --panel-edge: rgba(219, 230, 230, .1);
-    --mint: #a1e2d1;
+  color-scheme: dark;
+  --page-ink: #0c1119;
+  --panel-ink: #141c28;
+  --panel-edge: rgba(219, 230, 230, 0.1);
+  --mint: #a1e2d1;
 }
 
 body {
-    background-color: var(--page-ink) !important;
-    background-image:
-        radial-gradient(ellipse at 12% 0%, rgba(111, 157, 153, .075), transparent 40%),
-        radial-gradient(ellipse at 96% 92%, rgba(173, 145, 104, .035), transparent 30%),
-        linear-gradient(180deg, #0c1119, #0a0f16 72%) !important;
+  background-color: var(--page-ink) !important;
+  background-image:
+    radial-gradient(
+      ellipse at 12% 0%,
+      rgba(111, 157, 153, 0.075),
+      transparent 40%
+    ),
+    radial-gradient(
+      ellipse at 96% 92%,
+      rgba(173, 145, 104, 0.035),
+      transparent 30%
+    ),
+    linear-gradient(180deg, #0c1119, #0a0f16 72%) !important;
 }
 
 body::before {
-    opacity: .12 !important;
-    background-size: 76px 76px !important;
+  opacity: 0.12 !important;
+  background-size: 76px 76px !important;
 }
 
 .grid-glow,
 .auth-grid {
-    opacity: .055 !important;
-    background-size: 82px 82px !important;
+  opacity: 0.055 !important;
+  background-size: 82px 82px !important;
 }
 
 .neural-network {
-    opacity: .34 !important;
+  opacity: 0.34 !important;
 }
 
 .scene {
-    background: radial-gradient(ellipse at 68% 36%, rgba(91, 145, 146, .12), transparent 44%), var(--page-ink) !important;
+  background:
+    radial-gradient(
+      ellipse at 68% 36%,
+      rgba(91, 145, 146, 0.12),
+      transparent 44%
+    ),
+    var(--page-ink) !important;
 }
 
 .topbar,
 .app-nav {
-    background-color: rgba(12, 17, 25, .94) !important;
+  background-color: rgba(12, 17, 25, 0.94) !important;
 }
 
 .surface-card,
@@ -44,67 +58,77 @@ body::before {
 .card,
 .app-table-wrap,
 .auth-panel {
-    border-color: var(--panel-edge) !important;
-    background: linear-gradient(155deg, rgba(23, 31, 44, .98), rgba(17, 24, 35, .98)) !important;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, .2), inset 0 1px rgba(255, 255, 255, .025) !important;
-    backdrop-filter: none !important;
+  border-color: var(--panel-edge) !important;
+  background: linear-gradient(
+    155deg,
+    rgba(23, 31, 44, 0.98),
+    rgba(17, 24, 35, 0.98)
+  ) !important;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.2),
+    inset 0 1px rgba(255, 255, 255, 0.025) !important;
+  backdrop-filter: none !important;
 }
 
 .feature-card {
-    border-color: var(--panel-edge) !important;
-    background: #141c28 !important;
+  border-color: var(--panel-edge) !important;
+  background: #141c28 !important;
 }
 
 .feature-card:hover {
-    border-color: rgba(161, 226, 209, .22) !important;
-    background: #192332 !important;
-    transform: translateY(-2px);
+  border-color: rgba(161, 226, 209, 0.22) !important;
+  background: #192332 !important;
+  transform: translateY(-2px);
 }
 
 .card:hover {
-    transform: translateY(-2px);
-    border-color: rgba(161, 226, 209, .22) !important;
-    background: #192332 !important;
+  transform: translateY(-2px);
+  border-color: rgba(161, 226, 209, 0.22) !important;
+  background: #192332 !important;
 }
 
 h1:not(.headline),
 h2:not(.headline) {
-    font-family: Georgia, "Times New Roman", serif;
-    font-weight: 600;
-    letter-spacing: -.025em;
-    text-wrap: balance;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
 }
 
 a[class*="bg-gradient-to-r"],
 button[class*="bg-gradient-to-r"],
 .primary-cta,
 .submit-btn {
-    border: 1px solid rgba(222, 255, 244, .22) !important;
-    background: var(--mint) !important;
-    color: #12211e !important;
-    box-shadow: 0 3px 0 rgba(62, 112, 101, .55), 0 8px 18px rgba(0, 0, 0, .18) !important;
+  border: 1px solid rgba(222, 255, 244, 0.22) !important;
+  background: var(--mint) !important;
+  color: #12211e !important;
+  box-shadow:
+    0 3px 0 rgba(62, 112, 101, 0.55),
+    0 8px 18px rgba(0, 0, 0, 0.18) !important;
 }
 
 a[class*="bg-gradient-to-r"]:hover,
 button[class*="bg-gradient-to-r"]:hover,
 .primary-cta:hover,
 .submit-btn:hover {
-    background: #b4eadb !important;
-    box-shadow: 0 4px 0 rgba(62, 112, 101, .55), 0 10px 20px rgba(0, 0, 0, .2) !important;
+  background: #b4eadb !important;
+  box-shadow:
+    0 4px 0 rgba(62, 112, 101, 0.55),
+    0 10px 20px rgba(0, 0, 0, 0.2) !important;
 }
 
 table thead[class] {
-    background: #1b2634 !important;
+  background: #1b2634 !important;
 }
 
 tbody tr:nth-child(even) {
-    background: rgba(255, 255, 255, .018);
+  background: rgba(255, 255, 255, 0.018);
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .card:hover,
-    .primary-cta:hover,
-    .submit-btn:hover {
-        transform: none;
-    }
+  .card:hover,
+  .primary-cta:hover,
+  .submit-btn:hover {
+    transform: none;
+  }
 }

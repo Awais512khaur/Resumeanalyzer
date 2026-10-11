@@ -1,0 +1,25 @@
+/* Extracted from modules/dashboard/index.php */
+.stat-card {
+  min-height: 9.5rem;
+}
+@media (prefers-reduced-motion: no-preference) {
+  main section {
+    animation: dashboard-enter 0.55s ease-out both;
+  }
+  main section:nth-child(2) {
+    animation-delay: 0.08s;
+  }
+  main section:nth-child(3) {
+    animation-delay: 0.16s;
+  }
+}
+@keyframes dashboard-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

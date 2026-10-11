@@ -10,6 +10,9 @@ header("Expires: 0");
 require_once __DIR__ . "/../../config/config.php";
 require_once __DIR__ . "/../../config/db.php";
 require_once __DIR__ . "/../../templates/header.php";
+?>
+<link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/dashboard.css?v=1">
+<?php
 
 $user_role = $_SESSION['role'] ?? 'user';
 $user_id = $_SESSION['user_id'];
@@ -62,9 +65,4 @@ $avg_score = round($stmt->fetch()['avg_score'] ?? 0);
     </div>
   </section>
 </main>
-<style>
-.stat-card { min-height:9.5rem; }
-@media (prefers-reduced-motion: no-preference) { main section { animation: dashboard-enter .55s ease-out both; } main section:nth-child(2) { animation-delay:.08s; } main section:nth-child(3) { animation-delay:.16s; } }
-@keyframes dashboard-enter { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-</style>
 <?php require_once __DIR__ . "/../../templates/footer.php"; ?>
