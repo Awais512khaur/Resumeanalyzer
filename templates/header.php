@@ -80,6 +80,7 @@ button, a { -webkit-tap-highlight-color:transparent; }
 @media (prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto!important; transition-duration:.01ms!important; animation-duration:.01ms!important; } }
 @media (max-width:700px) { table { min-width:680px; } table td,table th { padding-left:.75rem!important; padding-right:.75rem!important; } }
 </style>
+<link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/site-detail.css?v=1">
 </head>
 
 <body class="text-white min-h-screen flex flex-col">

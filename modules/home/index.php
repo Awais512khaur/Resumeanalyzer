@@ -62,6 +62,7 @@ body { margin: 0; min-height: 100vh; overflow-x: hidden; color: #f5f7ff; backgro
 @media (max-width:640px) { .visual-stage { min-height:26rem; margin-top:1.5rem; } .resume-card { top:2rem; width:17rem; min-height:22rem; } .orb { top:4rem; width:16rem; height:16rem; } .orbit { top:6rem; width:21rem; } .score-card { top:16.3rem; left:calc(50% + 2.8rem); transform:scale(.88); transform-origin:left top; } .match-card { top:7.2rem; left:calc(50% - 10rem); transform:scale(.88); transform-origin:right top; } }
 @media (prefers-reduced-motion: reduce) { *,*::before,*::after { scroll-behavior:auto !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; } .rise-in { opacity:1; transform:none; } }
 </style>
+<link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/site-detail.css?v=1">
 </head>
 <body>
 <div class="scene min-h-screen overflow-hidden">

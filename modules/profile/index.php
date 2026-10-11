@@ -98,9 +98,11 @@ $averageMatch = $analysisCount ? (int)round(array_sum(array_map('intval', array_
 $averageAts = $analysisCount ? (int)round(array_sum(array_map('intval', array_column($analyses, 'ats_score'))) / $analysisCount) : 0;
 
 $analysisLabels = [];
+$analysisTooltipLabels = [];
 $analysisMatches = [];
 foreach ($analyses as $analysis) {
-    $analysisLabels[] = date('d M', strtotime($analysis['created_at'])) . ' · ' . $analysis['file_name'];
+    $analysisLabels[] = preg_replace('/^\d{8,}_/', '', (string)$analysis['file_name']);
+    $analysisTooltipLabels[] = date('d M Y, h:i A', strtotime($analysis['created_at'])) . ' · ' . $analysis['file_name'];
     $analysisMatches[] = (int)$analysis['score'];
 }
 $resumeLabels = array_map(static fn($resume) => $resume['file_name'], $resumes);
@@ -213,7 +215,7 @@ require_once __DIR__ . '/../../templates/header.php';
                     <thead><tr><th class="px-4">Resume</th><th class="px-4">Date</th><th class="px-4">Match score</th><th class="px-4">ATS score</th><th class="px-4">Resume</th></tr></thead>
                     <tbody>
                     <?php foreach (array_reverse($analyses) as $analysis): ?>
-                        <tr class="border-b border-white/10">
+                        <tr data-analysis-row class="border-b border-white/10">
                             <td class="max-w-[20rem] truncate px-4 font-medium text-slate-100"><?php echo htmlspecialchars($analysis['file_name'], ENT_QUOTES, 'UTF-8'); ?></td>
                             <td class="px-4 text-sm text-slate-400"><?php echo htmlspecialchars(date('d M Y, h:i A', strtotime($analysis['created_at'])), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td class="px-4 font-semibold text-teal-100"><?php echo (int)$analysis['score']; ?>%</td>
@@ -224,6 +226,14 @@ require_once __DIR__ . '/../../templates/header.php';
                     </tbody>
                 </table>
             </div>
+            <nav id="analysisPagination" class="mt-4 flex flex-wrap items-center justify-between gap-3" aria-label="Analysis history pages">
+                <p id="analysisPageStatus" class="text-sm text-slate-400" aria-live="polite"></p>
+                <div class="flex items-center gap-2">
+                    <button id="analysisPreviousPage" type="button" class="rounded-xl border border-white/10 bg-white/[.04] px-3.5 py-2 text-sm font-semibold text-slate-200 transition hover:border-teal-200/25 hover:bg-teal-200/[.07] disabled:cursor-not-allowed disabled:opacity-40">Previous</button>
+                    <span id="analysisPageNumber" class="min-w-16 text-center text-sm font-semibold text-teal-100" aria-label="Current page"></span>
+                    <button id="analysisNextPage" type="button" class="rounded-xl border border-white/10 bg-white/[.04] px-3.5 py-2 text-sm font-semibold text-slate-200 transition hover:border-teal-200/25 hover:bg-teal-200/[.07] disabled:cursor-not-allowed disabled:opacity-40">Next</button>
+                </div>
+            </nav>
         <?php else: ?>
             <div class="surface-card rounded-2xl px-6 py-8 text-center text-sm text-slate-400">Your analysis results will appear here after you analyze a resume.</div>
         <?php endif; ?>
@@ -232,10 +242,10 @@ require_once __DIR__ . '/../../templates/header.php';
     <section aria-labelledby="profile-chart-heading">
         <div class="mb-4"><p class="text-xs font-semibold uppercase tracking-[.16em] text-violet-200">Your progress</p><h2 id="profile-chart-heading" class="mt-1 text-2xl font-bold text-white">Resume performance</h2></div>
         <div class="grid gap-5 xl:grid-cols-2">
-            <article class="surface-card rounded-2xl p-5 sm:p-6">
+            <article class="surface-card w-full min-w-0 rounded-2xl p-5 sm:p-6">
                 <h3 class="font-semibold text-white">Match score across analyses</h3>
                 <p class="mt-1 text-xs text-slate-500">Each result for all your uploaded resumes</p>
-                <div class="relative mt-4 h-[280px]"><canvas id="profileAnalysisChart" role="img" aria-label="Match scores across all resume analyses"></canvas></div>
+                <div class="relative mt-4 h-[280px] w-full min-w-0"><canvas id="profileAnalysisChart" class="block h-full w-full" role="img" aria-label="Match scores across all resume analyses"></canvas></div>
             </article>
             <article class="surface-card rounded-2xl p-5 sm:p-6">
                 <h3 class="font-semibold text-white">Latest scores by resume</h3>
@@ -259,16 +269,46 @@ passwordModal?.showModal();
 <?php endif; ?>
 const profileChartFont = { family: 'Inter, ui-sans-serif, system-ui, sans-serif' };
 const profileTooltip = { backgroundColor: 'rgba(8,13,27,.96)', borderColor: 'rgba(148,163,184,.2)', borderWidth: 1, titleColor: '#f8fafc', bodyColor: '#cbd5e1', padding: 11, bodyFont: profileChartFont };
-new Chart(document.getElementById('profileAnalysisChart'), {
+const profileAnalysisChart = new Chart(document.getElementById('profileAnalysisChart'), {
     type: 'line',
     data: { labels: <?php echo json_encode($analysisLabels, $jsonFlags); ?>, datasets: [{ label: 'Match score', data: <?php echo json_encode($analysisMatches, $jsonFlags); ?>, borderColor: '#67e8d3', backgroundColor: 'rgba(103,232,211,.12)', pointBackgroundColor: '#9af2d5', pointRadius: 3, borderWidth: 2, tension: .35, fill: true }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: profileTooltip }, scales: { x: { grid: { display: false }, ticks: { color: '#8090a8', maxTicksLimit: 7, font: { ...profileChartFont, size: 10 } } }, y: { min: 0, max: 100, ticks: { color: '#71809a', stepSize: 25, callback: value => value + '%' }, grid: { color: 'rgba(148,163,184,.09)' } } } }
+    options: { responsive: true, maintainAspectRatio: false, layout: { padding: { left: 10, right: 10 } }, plugins: { legend: { display: false }, tooltip: { ...profileTooltip, callbacks: { title: items => <?php echo json_encode($analysisTooltipLabels, $jsonFlags); ?>[items[0].dataIndex] || '' } } }, scales: { x: { offset: true, grid: { display: false }, ticks: { color: '#8090a8', autoSkip: true, maxTicksLimit: 7, maxRotation: 0, minRotation: 0, callback: function(value) { const label = this.getLabelForValue(value); return label.length > 22 ? label.slice(0, 19) + '…' : label; }, font: { ...profileChartFont, size: 10 } } }, y: { min: 0, max: 100, ticks: { color: '#71809a', stepSize: 25, callback: value => value + '%' }, grid: { color: 'rgba(148,163,184,.09)' } } } }
 });
 new Chart(document.getElementById('profileResumeChart'), {
     type: 'bar',
     data: { labels: <?php echo json_encode($resumeLabels, $jsonFlags); ?>, datasets: [{ label: 'Match', data: <?php echo json_encode($resumeMatches, $jsonFlags); ?>, backgroundColor: 'rgba(45,212,191,.78)', borderRadius: 6 }, { label: 'ATS', data: <?php echo json_encode($resumeAts, $jsonFlags); ?>, backgroundColor: 'rgba(56,189,248,.78)', borderRadius: 6 }] },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#aab6c8', usePointStyle: true, pointStyle: 'circle' } }, tooltip: profileTooltip }, scales: { x: { grid: { display: false }, ticks: { color: '#8090a8', maxTicksLimit: 6, font: { ...profileChartFont, size: 10 } } }, y: { min: 0, max: 100, ticks: { color: '#71809a', stepSize: 25, callback: value => value + '%' }, grid: { color: 'rgba(148,163,184,.09)' } } } }
 });
+
+const analysisRows = [...document.querySelectorAll('[data-analysis-row]')];
+const analysisPageSize = 5;
+let analysisPage = 1;
+const analysisPageCount = Math.max(1, Math.ceil(analysisRows.length / analysisPageSize));
+const analysisPagination = document.getElementById('analysisPagination');
+const analysisPageStatus = document.getElementById('analysisPageStatus');
+const analysisPageNumber = document.getElementById('analysisPageNumber');
+const analysisPreviousPage = document.getElementById('analysisPreviousPage');
+const analysisNextPage = document.getElementById('analysisNextPage');
+
+if (analysisPagination) {
+    function showAnalysisPage(page) {
+        analysisPage = Math.min(analysisPageCount, Math.max(1, page));
+        const firstIndex = (analysisPage - 1) * analysisPageSize;
+        const lastIndex = Math.min(firstIndex + analysisPageSize, analysisRows.length);
+        analysisRows.forEach((row, index) => {
+            row.style.display = index >= firstIndex && index < lastIndex ? 'table-row' : 'none';
+        });
+        analysisPageStatus.textContent = `Showing ${analysisRows.length ? firstIndex + 1 : 0}–${lastIndex} of ${analysisRows.length} analyses`;
+        analysisPageNumber.textContent = `Page ${analysisPage} of ${analysisPageCount}`;
+        analysisPreviousPage.disabled = analysisPage === 1;
+        analysisNextPage.disabled = analysisPage === analysisPageCount;
+        analysisPagination.hidden = analysisPageCount <= 1;
+    }
+
+    analysisPreviousPage.addEventListener('click', () => showAnalysisPage(analysisPage - 1));
+    analysisNextPage.addEventListener('click', () => showAnalysisPage(analysisPage + 1));
+    showAnalysisPage(1);
+}
 </script>
 <script src="<?php echo BASE_URL; ?>assets/js/password-toggle.js" defer></script>
 <?php require_once __DIR__ . '/../../templates/footer.php'; ?>
