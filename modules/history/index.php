@@ -42,9 +42,11 @@ require_once __DIR__ . "/../../templates/header.php";
             $scoresChronological = array_reverse($results);
             $chartLabels = [];
             $chartScores = [];
+            $chartAtsScores = [];
             foreach ($scoresChronological as $row) {
                 $chartLabels[] = date('d M', strtotime($row['created_at']));
                 $chartScores[] = (int)$row['score'];
+                $chartAtsScores[] = (int)($row['ats_score'] ?? 0);
             }
             $suggestions = array_values(array_filter(array_map('trim', explode(' | ', (string)$latest['suggestions']))));
         ?>
@@ -65,11 +67,21 @@ require_once __DIR__ . "/../../templates/header.php";
 
         <section aria-label="Analysis charts" class="mb-6 grid gap-5 xl:grid-cols-[1.2fr_.8fr]">
             <article class="surface-card rounded-2xl p-5 sm:p-6">
-                <div class="mb-4">
-                    <h2 class="font-semibold text-white">Match score over time</h2>
-                    <p class="mt-1 text-xs text-slate-500">Your resume match percentage for each analysis</p>
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h2 class="font-semibold text-white">Score trends over time</h2>
+                        <p class="mt-1 text-xs text-slate-500">Compare resume match and ATS compatibility for each check</p>
+                    </div>
+                    <div class="flex items-center gap-4 text-xs font-medium">
+                        <span class="inline-flex items-center gap-1.5 text-teal-300">
+                            <span class="h-2.5 w-2.5 rounded-full bg-teal-400"></span> Match score
+                        </span>
+                        <span class="inline-flex items-center gap-1.5 text-indigo-300">
+                            <span class="h-2.5 w-2.5 rounded-full bg-indigo-400"></span> ATS score
+                        </span>
+                    </div>
                 </div>
-                <div class="relative h-[240px] sm:h-[280px]"><canvas id="scoreTrend" role="img" aria-label="Line chart of resume match scores over time"></canvas></div>
+                <div class="relative h-[240px] sm:h-[280px]"><canvas id="scoreTrend" role="img" aria-label="Line chart of resume match and ATS scores over time"></canvas></div>
             </article>
             <article class="surface-card rounded-2xl p-5 sm:p-6">
                 <div class="mb-4">
@@ -164,8 +176,73 @@ const chartFont = { family: 'Inter, ui-sans-serif, system-ui, sans-serif' };
 const tooltipStyle = { backgroundColor: 'rgba(8, 13, 27, .96)', borderColor: 'rgba(148, 163, 184, .2)', borderWidth: 1, titleColor: '#f8fafc', bodyColor: '#cbd5e1', padding: 11, titleFont: { ...chartFont, weight: '600' }, bodyFont: chartFont };
 new Chart(document.getElementById('scoreTrend'), {
     type: 'line',
-    data: { labels: <?php echo json_encode($chartLabels); ?>, datasets: [{ label: 'Match score', data: <?php echo json_encode($chartScores); ?>, borderColor: '#67e8d3', backgroundColor: 'rgba(103, 232, 211, .12)', pointBackgroundColor: '#9af2d5', pointBorderColor: '#102334', pointRadius: 3, pointHoverRadius: 5, borderWidth: 2, tension: .35, fill: true }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: tooltipStyle }, scales: { x: { grid: { display: false }, border: { display: false }, ticks: { color: '#8090a8', maxTicksLimit: 8, font: { ...chartFont, size: 10 } } }, y: { min: 0, max: 100, border: { display: false }, grid: { color: 'rgba(148,163,184,.09)' }, ticks: { color: '#71809a', stepSize: 25, callback: value => value + '%', font: { ...chartFont, size: 10 } } } } }
+    data: {
+        labels: <?php echo json_encode($chartLabels); ?>,
+        datasets: [
+            {
+                label: 'Match score',
+                data: <?php echo json_encode($chartScores); ?>,
+                borderColor: '#2dd4bf',
+                backgroundColor: 'rgba(45, 212, 191, .08)',
+                pointBackgroundColor: '#5eead4',
+                pointBorderColor: '#0f172a',
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                borderWidth: 2.5,
+                tension: .35,
+                fill: true
+            },
+            {
+                label: 'ATS score',
+                data: <?php echo json_encode($chartAtsScores); ?>,
+                borderColor: '#818cf8',
+                backgroundColor: 'rgba(129, 140, 248, .08)',
+                pointBackgroundColor: '#a5b4fc',
+                pointBorderColor: '#0f172a',
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                borderWidth: 2.5,
+                tension: .35,
+                fill: true
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+            mode: 'index',
+            intersect: false
+        },
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                ...tooltipStyle,
+                callbacks: {
+                    label: context => ` ${context.dataset.label}: ${context.raw}%`
+                }
+            }
+        },
+        scales: {
+            x: {
+                grid: { display: false },
+                border: { display: false },
+                ticks: { color: '#8090a8', maxTicksLimit: 8, font: { ...chartFont, size: 10 } }
+            },
+            y: {
+                min: 0,
+                max: 100,
+                border: { display: false },
+                grid: { color: 'rgba(148, 163, 184, .09)' },
+                ticks: {
+                    color: '#71809a',
+                    stepSize: 25,
+                    callback: value => value + '%',
+                    font: { ...chartFont, size: 10 }
+                }
+            }
+        }
+    }
 });
 const keywordChart = new Chart(document.getElementById('keywordChart'), {
     type: 'doughnut',

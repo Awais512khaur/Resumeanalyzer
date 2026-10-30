@@ -1,13 +1,16 @@
 <?php
 require_once __DIR__ . '/session.php';
 
-$host = getenv('DB_HOST') ?: 'localhost';
-$port = getenv('DB_PORT') ?: '3306';
-$dbname = getenv('DB_NAME') ?: 'resume_analyzer';
-$username = getenv('DB_USER') ?: 'root';
-$password = getenv('DB_PASSWORD') ?: '';
+$localConfigFile = __DIR__ . '/local.php';
+$localConfig = is_file($localConfigFile) ? require $localConfigFile : [];
+$localConfig = is_array($localConfig) ? $localConfig : [];
+$host = $localConfig['DB_HOST'] ?? (getenv('DB_HOST') ?: 'localhost');
+$port = $localConfig['DB_PORT'] ?? (getenv('DB_PORT') ?: '3306');
+$dbname = $localConfig['DB_NAME'] ?? (getenv('DB_NAME') ?: 'resume_analyzer');
+$username = $localConfig['DB_USER'] ?? (getenv('DB_USER') ?: 'root');
+$password = $localConfig['DB_PASSWORD'] ?? (getenv('DB_PASSWORD') ?: '');
 
-if (getenv('APP_ENV') === 'production' && ($username === 'root' || $password === '')) {
+if ((($localConfig['APP_ENV'] ?? getenv('APP_ENV')) === 'production') && ($username === 'root' || $password === '' || $password === 'PASTE_DATABASE_PASSWORD_HERE')) {
     error_log('Production database configuration must use a non-root user and a non-empty password.');
     http_response_code(500);
     exit('The application database is unavailable. Please try again later.');

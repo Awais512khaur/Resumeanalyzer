@@ -29,8 +29,10 @@ function resume_csrf_is_valid($token): bool
 if (session_status() !== PHP_SESSION_ACTIVE) {
     ini_set('session.use_strict_mode', '1');
     ini_set('session.use_only_cookies', '1');
+    $forwardedProto = strtolower(trim(explode(',', $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')[0]));
     $cookieSecure = getenv('RESUME_COOKIE_SECURE') === '1'
-        || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+        || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || $forwardedProto === 'https';
     session_set_cookie_params([
         'lifetime' => 0,
         'path' => '/',

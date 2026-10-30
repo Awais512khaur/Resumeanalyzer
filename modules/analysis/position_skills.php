@@ -51,14 +51,3 @@ if (!function_exists('get_position_required_skills')) {
         return $unique;
     }
 }
-
-if (!function_exists('position_description_plain_text')) {
-    function position_description_plain_text(string $description): string
-    {
-        $description = preg_replace('/<br\s*\/?\s*>/i', "\n", $description);
-        $description = preg_replace('/<\/(?:p|li|div|h[1-6])\s*>/i', "\n", $description);
-        $description = html_entity_decode(strip_tags($description), ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        $lines = array_map('trim', preg_split('/\r\n|\r|\n/', $description));
-        return implode("\n", array_filter($lines, static fn($line) => $line !== ''));
-    }
-}

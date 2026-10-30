@@ -9,6 +9,8 @@ header("Expires: 0");
 require_once __DIR__ . "/../config/config.php";
 
 $user_name = $_SESSION['user_name'] ?? 'Guest';
+$user_name_parts = preg_split('/\s+/u', trim((string)$user_name), 2, PREG_SPLIT_NO_EMPTY);
+$user_first_name = $user_name_parts[0] ?? 'Guest';
 $user_role = $_SESSION['role'] ?? 'user';
 $isDeveloperPage = (($_GET['page'] ?? '') === 'developer');
 $showAppNav = !$isDeveloperPage || isset($_SESSION['user_id']);
@@ -31,7 +33,7 @@ $navAttributes = static function (array $pages, string $base = 'app-link') use (
 <link rel="icon" type="image/png" sizes="64x64" href="<?php echo BASE_URL; ?>assets/images/favicon.png?v=2">
 <link rel="shortcut icon" type="image/x-icon" href="<?php echo BASE_URL; ?>favicon.ico?v=2">
 
-<?php include_once __DIR__ . '/../assets/cdn/tailwind.php'; ?>
+<?php include_once __DIR__ . '/../assets/CDN/tailwind.php'; ?>
 <?php include_once __DIR__ . '/../assets/CDN/chart.php'; ?>
 
 <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/app-header.css?v=1">
@@ -68,7 +70,7 @@ $navAttributes = static function (array $pages, string $base = 'app-link') use (
             <details class="account-menu relative">
                 <summary class="flex cursor-pointer list-none items-center gap-2 rounded-xl border border-white/10 bg-white/[.04] px-3 py-1.5 text-sm text-slate-300 transition hover:bg-white/[.08]">
                     <span aria-hidden="true">👤</span>
-                    <span><?php echo htmlspecialchars($user_name, ENT_QUOTES, 'UTF-8'); ?><?php if ($user_role === 'admin'): ?> <span class="font-semibold text-yellow-400">Admin</span><?php endif; ?></span>
+                    <span><?php echo htmlspecialchars($user_first_name, ENT_QUOTES, 'UTF-8'); ?><?php if ($user_role === 'admin'): ?> <span class="font-semibold text-yellow-400">Admin</span><?php endif; ?></span>
                     <svg class="h-3.5 w-3.5 text-slate-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.22 7.47a.75.75 0 0 1 1.06 0L10 11.19l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 8.53a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd"/></svg>
                 </summary>
                 <div class="account-dropdown absolute right-0 top-full z-[70] mt-2 w-48 rounded-xl border border-white/10 bg-[#101a2b] p-1.5 shadow-2xl shadow-black/40">
@@ -103,7 +105,7 @@ $navAttributes = static function (array $pages, string $base = 'app-link') use (
             <a href="<?php echo BASE_URL; ?>index.php?page=admin_audit_logs" <?php echo $navAttributes(['admin_audit_logs'], 'mobile-nav-link py-2 border-b border-white/10'); ?>>Audit log</a>
         <?php endif; ?>
 
-        <a href="<?php echo BASE_URL; ?>profile" <?php echo $navAttributes(['profile'], 'mobile-nav-link py-2 border-b border-white/10'); ?>>Profile · <?php echo htmlspecialchars($user_name, ENT_QUOTES, 'UTF-8'); ?></a>
+        <a href="<?php echo BASE_URL; ?>profile" <?php echo $navAttributes(['profile'], 'mobile-nav-link py-2 border-b border-white/10'); ?>>Profile · <?php echo htmlspecialchars($user_first_name, ENT_QUOTES, 'UTF-8'); ?></a>
 
         <!-- LOGOUT -->
         <form action="<?php echo BASE_URL; ?>modules/auth/logout.php" method="POST" class="py-2"><input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8'); ?>"><button type="submit" class="text-rose-200">Logout</button></form>

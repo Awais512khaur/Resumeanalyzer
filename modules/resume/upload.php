@@ -90,6 +90,8 @@ require_once __DIR__ . "/../../templates/header.php";
                 Upload Resume
             </button>
 
+            <p class="mt-4 text-center text-xs leading-5 text-slate-400">Scanned PDFs are read automatically during analysis using Gemini. Resume content from scanned PDFs is sent to Google for OCR.</p>
+
         </form>
 
     </div>

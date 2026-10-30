@@ -11,3 +11,10 @@
 *.db
 tools/
 vendor/
+*.zip
+deploy/upload-bundle/
+deploy/*.zip
+.env
+.env.*
+!.env.example
+config/local.php

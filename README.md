@@ -23,7 +23,7 @@ Resume Analyzer is a PHP and MySQL web application that extracts text from PDF r
 - Git, if you want to install TCPDF with the command below.
 - Poppler for reading and rendering PDF files, installed inside this project's `tools` folder.
 - TCPDF for generating downloadable PDF reports, installed inside this project's `tools` folder.
-- Tesseract OCR for scanned/image-only PDFs (optional for text-based PDFs, needed for OCR).
+- Tesseract OCR for local scanned-PDF OCR. On shared hosting without Tesseract, scanned PDFs can use Gemini PDF OCR when a Gemini API key is configured.
 - A Google Gemini API key for AI-generated analysis. Core skill matching can still be used without a working AI key, subject to the application's current behavior.
 - A web browser.
 
@@ -161,9 +161,23 @@ Resume Analyzer is a PHP and MySQL web application that extracts text from PDF r
 
 ## 8. Configure the Gemini API key
 
-- Set the `GEMINI_API_KEY` environment variable to your own Google Gemini API key. On Windows, use `setx GEMINI_API_KEY "your-new-key"`, then restart Apache.
-- Do not publish or commit a real API key. Keep it private and revoke any key that was previously present in source control.
-- AI-generated suggestions require internet access from PHP and the PHP `curl` extension. Configure the key before relying on AI analysis.
+- Create a new key in [Google AI Studio's API key page](https://aistudio.google.com/app/apikey). Sign in, choose **Create API key**, and copy the new key. Google’s [Gemini API key guide](https://ai.google.dev/gemini-api/docs/api-key) has the current instructions.
+- For a local Windows/XAMPP setup, add the key as a Windows user environment variable:
+  - Open **Edit environment variables for your account** from the Windows Start menu.
+  - Under **User variables**, choose **New**.
+  - Set **Variable name** to `GEMINI_API_KEY` and paste your new key into **Variable value**.
+  - Save the change, close the XAMPP Control Panel completely, reopen it, and restart Apache. Apache must be restarted from a newly opened XAMPP process so it receives the updated environment.
+- Or, from PowerShell, run the following with your new key in place of the example, then close and reopen XAMPP and restart Apache:
+
+  ```powershell
+  setx GEMINI_API_KEY "paste-your-new-key-here"
+  ```
+
+- The app reads `GEMINI_API_KEY` through `getenv()` in `config/config.php`. Do not paste the key into PHP source, JavaScript, HTML, this README, or any committed file.
+- For Docker deployment, copy `.env.example` to `.env` in the project root and put the key after `GEMINI_API_KEY=`. Docker Compose passes it to the app container. `.env` is ignored by Git; never force-add it.
+- A key was included in earlier Git commits. Revoke/delete that old key in Google AI Studio or Google Cloud, then use a newly created key. Rewriting Git history cannot invalidate copies or cached versions of the exposed key.
+- For an InfinityFree deployment, put the newly created key in the private `config/local.php` file as the value of `GEMINI_API_KEY`, then upload that file through FTP. Do not commit or share `config/local.php`. When a PDF has no selectable text, the app sends that PDF to Gemini for OCR; this is in addition to sending extracted resume text for Gemini analysis.
+- AI-generated suggestions require internet access from PHP and the PHP `curl` extension.
 
 ## 9. Configure password reset email
 
@@ -252,7 +266,7 @@ The app needs PHP, MySQL, Poppler, and Tesseract. Free PHP shared hosts often bl
 
 - The deployment starts with an empty database. It creates the current tables but does not copy local user accounts, resume files, analysis history, or other private records.
 - The local `SQL_file/resume_analyzer.sql` contains sample user records and resume metadata. It is intentionally not used by this deployment.
-- A Gemini API key was previously present in local configuration. It is no longer read from source; set a newly generated key in the server `.env` and revoke the old key in Google AI Studio/Google Cloud before making this project public.
+- A Gemini API key was included in earlier Git commits. Revoke/delete it in Google AI Studio/Google Cloud even after cleaning Git history, then set a newly generated key in the server `.env` before making this project public.
 - Password reset email only works after valid SMTP settings are entered in `.env`.
 - Oracle requires payment-method verification to create a Free Tier account. Oracle describes Always Free resources as free for the life of the account, but only resources marked Always Free remain free; do not upgrade the account or select paid resources.
 - A domain name is required for automatic HTTPS. Point its DNS A record at the VM's public IPv4 address before starting the app.

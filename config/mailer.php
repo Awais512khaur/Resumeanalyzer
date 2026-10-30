@@ -10,7 +10,7 @@ function send_password_reset_code(string $email, string $name, string $code): vo
 
     $settings = require __DIR__ . '/mail.php';
     if ($settings['host'] === '' || $settings['username'] === '' || $settings['password'] === '' || $settings['from_email'] === '') {
-        throw new RuntimeException('SMTP settings are missing. Configure the RESUME_SMTP environment variables.');
+        throw new RuntimeException('SMTP settings are missing. Configure the mail settings in config/local.php.');
     }
 
     $mail = new \PHPMailer\PHPMailer\PHPMailer(true);

@@ -19,11 +19,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !resume_csrf_is_valid($_POST['csrf_
 
 $user_id = $_SESSION['user_id'];
 $normalizeRequiredSkills = static function ($input) {
-    $skills = preg_split('/[,\r\n]+/', (string)$input);
+    $skills = preg_split('/[,;|\r\n]+/', (string)$input);
     $uniqueSkills = [];
     $seen = [];
     foreach ($skills as $skill) {
-        $skill = trim($skill);
+        $skill = trim(preg_replace('/^\s*(?:[-*•]|\d+[.)])\s*/u', '', $skill));
+        if (mb_strlen($skill) > 80 || preg_match('/[.!?]\s+\p{L}/u', $skill)) {
+            return '';
+        }
         $key = strtolower($skill);
         if ($skill !== '' && !isset($seen[$key])) {
             $seen[$key] = true;
@@ -36,11 +39,14 @@ $normalizeRequiredSkills = static function ($input) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['position_name']) && !isset($_POST['edit_id'])) {
 
     $name = trim($_POST['position_name']);
-    $description = $_POST['description'];
     $requiredSkills = $normalizeRequiredSkills($_POST['required_skills'] ?? '');
+    if ($name === '' || $requiredSkills === '') {
+        http_response_code(400);
+        exit('Enter a position name and at least one required skill, with each skill on its own line.');
+    }
 
     $stmt = $pdo->prepare("INSERT INTO positions (name, description, required_skills, created_by) VALUES (?, ?, ?, ?)");
-    $stmt->execute([$name, $description, $requiredSkills, $user_id]);
+    $stmt->execute([$name, '', $requiredSkills, $user_id]);
     audit_log($pdo, 'position.created', 'Position created: ' . $name, 'position', (int)$pdo->lastInsertId());
 
     header("Location: " . BASE_URL . "admin_positions");
@@ -52,11 +58,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_id'])) {
 
     $id = (int) $_POST['edit_id'];
     $name = trim($_POST['position_name']);
-    $description = $_POST['description'];
     $requiredSkills = $normalizeRequiredSkills($_POST['required_skills'] ?? '');
+    if ($name === '' || $requiredSkills === '') {
+        http_response_code(400);
+        exit('Enter a position name and at least one required skill, with each skill on its own line.');
+    }
 
-    $stmt = $pdo->prepare("UPDATE positions SET name = ?, description = ?, required_skills = ? WHERE id = ?");
-    $stmt->execute([$name, $description, $requiredSkills, $id]);
+    $stmt = $pdo->prepare("UPDATE positions SET name = ?, description = '', required_skills = ? WHERE id = ?");
+    $stmt->execute([$name, $requiredSkills, $id]);
     audit_log($pdo, 'position.updated', 'Position updated: ' . $name, 'position', $id);
 
     header("Location: " . BASE_URL . "admin_positions");
@@ -162,7 +171,6 @@ require_once __DIR__ . "/../../templates/header.php";
                     <th class="p-3">#</th>
                     <th class="p-3">Name</th>
                     <th class="p-3">Required Skills</th>
-                    <th class="p-3">Description</th>
                     <th class="p-3">Created By</th>
                     <th class="p-3">Date</th>
                     <th class="p-3 text-center">Action</th>
@@ -182,11 +190,11 @@ require_once __DIR__ . "/../../templates/header.php";
                     </td>
 
                     <td class="p-3 text-teal-100">
-                        <?php echo htmlspecialchars($p['required_skills'] ?? 'Not set'); ?>
-                    </td>
-
-                    <td class="p-3 text-gray-300">
-                        <?php echo htmlspecialchars((string)$p['description'], ENT_QUOTES, 'UTF-8'); ?>
+                        <div class="flex max-w-sm flex-wrap gap-1.5">
+                            <?php foreach ($p['skills_list'] as $skill): ?>
+                                <span class="rounded-full border border-teal-200/10 bg-teal-200/[.06] px-2.5 py-1 text-xs"><?php echo htmlspecialchars($skill, ENT_QUOTES, 'UTF-8'); ?></span>
+                            <?php endforeach; ?>
+                        </div>
                     </td>
 
                     <td class="p-3 text-yellow-400">
@@ -231,7 +239,7 @@ require_once __DIR__ . "/../../templates/header.php";
 <div id="addModal" class="position-modal" role="dialog" aria-modal="true" aria-labelledby="addModalTitle" onclick="if(event.target===this) closePositionModal('addModal')">
     <div class="position-modal-card">
         <div class="mb-5 flex items-start justify-between gap-4">
-            <div><p class="mb-1 text-[.68rem] font-bold uppercase tracking-[.18em] text-teal-200">Position library</p><h3 id="addModalTitle" class="position-modal-heading">Add a position</h3><p class="position-modal-copy mt-1">Describe the role so resumes can be matched against it.</p></div>
+            <div><p class="mb-1 text-[.68rem] font-bold uppercase tracking-[.18em] text-teal-200">Position library</p><h3 id="addModalTitle" class="position-modal-heading">Add a position</h3><p class="position-modal-copy mt-1">Add the skills resumes should be matched against.</p></div>
             <button type="button" class="position-modal-close" aria-label="Close dialog" onclick="closePositionModal('addModal')">×</button>
         </div>
 
@@ -245,11 +253,8 @@ require_once __DIR__ . "/../../templates/header.php";
                    class="w-full">
 
             <label class="mb-2 block text-sm font-medium text-slate-300" for="required_skills">Required skills</label>
-            <textarea id="required_skills" name="required_skills" rows="3" placeholder="e.g. PHP, MySQL, REST APIs, communication" class="mb-4 w-full rounded-xl border border-white/10 bg-white/[.04] p-3 text-sm text-slate-100 placeholder:text-slate-500"></textarea>
-            <p class="-mt-2 mb-4 text-xs text-slate-500">Separate skills with commas or new lines. These skills determine the resume match score.</p>
-
-            <label class="mb-2 block text-sm font-medium text-slate-300" for="editorAdd">Role description</label>
-            <textarea id="editorAdd" name="description"></textarea>
+            <textarea id="required_skills" name="required_skills" rows="5" required placeholder="PHP&#10;HTML&#10;CSS&#10;MySQL" class="mb-4 w-full rounded-xl border border-white/10 bg-white/[.04] p-3 text-sm text-slate-100 placeholder:text-slate-500"></textarea>
+            <p class="-mt-2 mb-4 text-xs text-slate-500">Enter one skill per line. The resume match score uses this list only.</p>
 
             <button class="modal-submit" type="submit">Save position <span aria-hidden="true">→</span></button>
         </form>
@@ -260,7 +265,7 @@ require_once __DIR__ . "/../../templates/header.php";
 <div id="editModal" class="position-modal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle" onclick="if(event.target===this) closePositionModal('editModal')">
     <div class="position-modal-card">
         <div class="mb-5 flex items-start justify-between gap-4">
-            <div><p class="mb-1 text-[.68rem] font-bold uppercase tracking-[.18em] text-teal-200">Position library</p><h3 id="editModalTitle" class="position-modal-heading">Edit position</h3><p class="position-modal-copy mt-1">Update the role details used in resume matching.</p></div>
+            <div><p class="mb-1 text-[.68rem] font-bold uppercase tracking-[.18em] text-teal-200">Position library</p><h3 id="editModalTitle" class="position-modal-heading">Edit position</h3><p class="position-modal-copy mt-1">Update the required skill list used in resume matching.</p></div>
             <button type="button" class="position-modal-close" aria-label="Close dialog" onclick="closePositionModal('editModal')">×</button>
         </div>
 
@@ -273,11 +278,8 @@ require_once __DIR__ . "/../../templates/header.php";
             <input type="text" name="position_name" id="edit_name" required class="w-full">
 
             <label class="mb-2 block text-sm font-medium text-slate-300" for="edit_required_skills">Required skills</label>
-            <textarea id="edit_required_skills" name="required_skills" rows="3" placeholder="e.g. PHP, MySQL, REST APIs, communication" class="mb-4 w-full rounded-xl border border-white/10 bg-white/[.04] p-3 text-sm text-slate-100 placeholder:text-slate-500"></textarea>
-            <p class="-mt-2 mb-4 text-xs text-slate-500">Separate skills with commas or new lines. These skills determine the resume match score.</p>
-
-            <label class="mb-2 block text-sm font-medium text-slate-300" for="editorEdit">Role description</label>
-            <textarea id="editorEdit" name="description"></textarea>
+            <textarea id="edit_required_skills" name="required_skills" rows="5" required placeholder="PHP&#10;HTML&#10;CSS&#10;MySQL" class="mb-4 w-full rounded-xl border border-white/10 bg-white/[.04] p-3 text-sm text-slate-100 placeholder:text-slate-500"></textarea>
+            <p class="-mt-2 mb-4 text-xs text-slate-500">Enter one skill per line. The resume match score uses this list only.</p>
 
             <button class="modal-submit" type="submit">Save changes <span aria-hidden="true">→</span></button>
         </form>
@@ -304,20 +306,7 @@ require_once __DIR__ . "/../../templates/header.php";
     </div>
 </div>
 
-<script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
-
 <script>
-let addEditor, editEditor;
-
-const editorConfig = {
-    toolbar: {
-        items: ['undo', 'redo', '|', 'heading', '|', 'bold', 'italic', '|', 'bulletedList', 'numberedList', 'link'],
-        shouldNotGroupWhenFull: true
-    }
-};
-ClassicEditor.create(document.querySelector('#editorAdd'), editorConfig).then(e => addEditor = e);
-ClassicEditor.create(document.querySelector('#editorEdit'), editorConfig).then(e => editEditor = e);
-
 function openAddModal() {
     openPositionModal('addModal');
 }
@@ -329,9 +318,6 @@ function openEditModal(data) {
     document.getElementById('edit_name').value = data.name;
     document.getElementById('edit_required_skills').value = data.required_skills || '';
 
-    setTimeout(() => {
-        editEditor.setData(data.description || '');
-    }, 200);
 }
 
 function confirmDelete(id) {
